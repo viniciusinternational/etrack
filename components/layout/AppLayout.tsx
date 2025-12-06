@@ -5,10 +5,13 @@
  * Modern layout with sidebar and header
  */
 
+import { useRouter } from "next/navigation";
 import { User } from "@/types";
 import { AppSidebar } from "./AppSidebar";
 import { DashboardHeader } from "./DashboardHeader";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { useAuthStore } from "@/store/auth-store";
+import { toast } from "sonner";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -17,9 +20,13 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children, user, className }: AppLayoutProps) {
+  const router = useRouter();
+  const { logout } = useAuthStore();
+
   const handleLogout = () => {
-    // Implement logout logic
-    console.log("Logging out...");
+    logout();
+    toast.success("Logged out successfully");
+    router.push("/login");
   };
 
   return (

@@ -46,6 +46,17 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        kaduna: {
+          green: "var(--kaduna-green)",
+          "green-light": "var(--kaduna-green-light)",
+          "green-lighter": "var(--kaduna-green-lighter)",
+          blue: "var(--kaduna-blue)",
+          "blue-light": "var(--kaduna-blue-light)",
+          "blue-lighter": "var(--kaduna-blue-lighter)",
+          gold: "var(--kaduna-gold)",
+          "gold-light": "var(--kaduna-gold-light)",
+          navy: "var(--kaduna-navy)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

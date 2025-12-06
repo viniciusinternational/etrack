@@ -9,23 +9,23 @@ async function main() {
 
   // Clear existing data (in reverse order of dependencies)
   console.log("Clearing existing data...");
-  await prisma.userPermission.deleteMany();
-  await prisma.permission.deleteMany();
-  await prisma.calendarEvent.deleteMany();
-  await prisma.auditLog.deleteMany();
-  await prisma.discrepancyRemark.deleteMany();
-  await prisma.meetingMinutes.deleteMany();
-  await prisma.meeting.deleteMany();
-  await prisma.award.deleteMany();
-  await prisma.bid.deleteMany();
-  await prisma.procurementRequest.deleteMany();
-  await prisma.revenue.deleteMany();
-  await prisma.expenditure.deleteMany();
-  await prisma.budgetAllocation.deleteMany();
-  await prisma.milestoneSubmission.deleteMany();
-  await prisma.project.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.mDA.deleteMany(); // Note: Prisma client uses PascalCase for model names
+  // await prisma.userPermission.deleteMany();
+  // await prisma.permission.deleteMany();
+  // await prisma.calendarEvent.deleteMany();
+  // await prisma.auditLog.deleteMany();
+  // await prisma.discrepancyRemark.deleteMany();
+  // await prisma.meetingMinutes.deleteMany();
+  // await prisma.meeting.deleteMany();
+  // await prisma.award.deleteMany();
+  // await prisma.bid.deleteMany();
+  // await prisma.procurementRequest.deleteMany();
+  // await prisma.revenue.deleteMany();
+  // await prisma.expenditure.deleteMany();
+  // await prisma.budgetAllocation.deleteMany();
+  // await prisma.milestoneSubmission.deleteMany();
+  // await prisma.project.deleteMany();
+  // await prisma.user.deleteMany();
+  // await prisma.mDA.deleteMany(); // Note: Prisma client uses PascalCase for model names
 
   console.log("Deleted existing data.");
 

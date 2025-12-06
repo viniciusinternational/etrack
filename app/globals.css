@@ -38,6 +38,15 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --color-kaduna-green: var(--kaduna-green);
+  --color-kaduna-green-light: var(--kaduna-green-light);
+  --color-kaduna-green-lighter: var(--kaduna-green-lighter);
+  --color-kaduna-blue: var(--kaduna-blue);
+  --color-kaduna-blue-light: var(--kaduna-blue-light);
+  --color-kaduna-blue-lighter: var(--kaduna-blue-lighter);
+  --color-kaduna-gold: var(--kaduna-gold);
+  --color-kaduna-gold-light: var(--kaduna-gold-light);
+  --color-kaduna-navy: var(--kaduna-navy);
 }
 
 :root {
@@ -73,6 +82,18 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  
+  /* Kaduna State Government Brand Colors */
+  /* Derived from the official Kaduna State Government seal/logo */
+  --kaduna-green: #1B5E20; /* Dark forest green from logo outer ring */
+  --kaduna-green-light: #E8F5E9; /* Light green for backgrounds and accents */
+  --kaduna-green-lighter: #C8E6C9; /* Lighter green for subtle backgrounds */
+  --kaduna-blue: #1565C0; /* Deep blue from logo outer ring (primary brand color) */
+  --kaduna-blue-light: #E3F2FD; /* Light blue for backgrounds */
+  --kaduna-blue-lighter: #BBDEFB; /* Lighter blue for subtle backgrounds */
+  --kaduna-gold: #D4A017; /* Gold/yellow from logo shield elements */
+  --kaduna-gold-light: #FFF9E6; /* Light gold for backgrounds */
+  --kaduna-navy: #0A2540; /* Dark navy for text on brand panels */
 }
 
 .dark {
