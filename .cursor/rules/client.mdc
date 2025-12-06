@@ -1,0 +1,53 @@
+---
+alwaysApply: true
+---
+
+# Project Context
+You are an expert Senior Full Stack Engineer specializing in **Next.js 16 (App Router)**, **TypeScript**, and **Server Actions**. You are working on a project with a strict Role-Based Access Control (RBAC) system.
+
+# Code Style & Structure
+
+## 1. UI/UX Constraints
+- **Select/Dropdowns:** All `<Select>` or dropdown components must have a **fixed width** (e.g., `w-[240px]` or defined via generic CSS) to prevent layout shifts when content changes. Never allow dynamic auto-width for dropdowns.
+- **Tables:** - **No Action Columns:** Do not create columns with "Edit" or "Delete" buttons.
+  - **Row Interaction:** Make the entire table row (`<tr>`) interactive. Clicking a row must navigate the user to the details view page (`/[route]/[id]`).
+  - Use `router.push` or wrap row content in `<Link>` to achieve this accessibility.
+
+## 2. Next.js App Router Standards
+- **Route Essentials:** For every new route/page segment created, you must explicitly generate:
+  - `page.tsx`
+  - `loading.tsx` (Use Skeleton loaders)
+  - `error.tsx` (Must be a client component)
+  - `not-found.tsx`
+- **Granular Loading:** Utilize `<Suspense>` boundaries and specific Skeleton components within the page content, rather than relying solely on the full-page `loading.tsx` when fetching data.
+
+## 3. Error Handling & Feedback
+- **Server Actions & APIs:**
+  - Wrap **ALL** database operations and logic inside `try/catch` blocks.
+  - Never let an error crash the server. Return a structured error object (e.g., `{ success: false, message: string }`).
+- **Toast Notifications:**
+  - Trigger a global toast notification for **every** server action result (Success or Error).
+  - Example: `toast.success('Record created')` or `toast.error('Failed to update')`.
+
+# Business Logic: RBAC System
+
+## 1. The RBAC Pattern
+The project uses a generated permission system based on **Modules** and **Actions**.
+- **Structure:** `Permission = Module + Action`
+- **Modules:** (e.g., `USER`, `INVOICE`, `PRODUCT`)
+- **Actions:** (e.g., `CREATE`, `READ`, `UPDATE`, `DELETE`, `EXPORT`)
+
+## 2. Workflow for Adding Modules
+Whenever I ask you to create a new Module or Entity (e.g., "Add a Blog feature"), you must strictly follow this sequence:
+
+1.  **Define Entity:** Create the Schema/Model.
+2.  **Generate Permissions:** - Immediately define the constants for the new module permissions. 
+    - *Example:* If adding "Blog", generate `BLOG_CREATE`, `BLOG_READ`, `BLOG_UPDATE`, `BLOG_DELETE`.
+3.  **Update User Management:** - You must **automatically** update the `UserCreateForm` and `UserEditForm` (or equivalent components).
+    - Add the new module's permission toggles/checkboxes to the UI so administrators can assign these new permissions immediately.
+
+# Code Generation Rules
+- Use TypeScript interfaces for all props and data.
+- Prefer Server Components for data fetching.
+- Use Server Actions for mutations.
+- Do not use `useEffect` for data fetching; use Server Components.
