@@ -1,133 +1,172 @@
 @import "tailwindcss";
 
 @theme {
+  /* --- 1. Base System --- */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
+
+  /* --- 2. Brand Specific Palette (Extracted from Image) --- */
+  --color-kaduna-green: #1B5E20;      /* Deep Official Green */
+  --color-kaduna-green-600: #2E7D32;  /* Vivid Green for hover */
+  --color-kaduna-green-100: #E8F5E9;  /* Light Green Backgrounds */
+  
+  --color-kaduna-blue: #0D47A1;       /* Deep Navy Blue from gradient */
+  --color-kaduna-blue-600: #1565C0;   /* Primary Blue */
+  --color-kaduna-blue-100: #E3F2FD;   /* Light Blue Backgrounds */
+  
+  --color-kaduna-gold: #FFC107;       /* Bright Gold from Ribbon */
+  --color-kaduna-gold-dark: #B78900;  /* Muted Gold for borders */
+  
+  /* --- 3. Semantic UI Mapping --- */
+  /* This maps generic names to specific brand colors */
   --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
+  --color-primary-foreground: var(--primary-foreground);
+  
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* --- 4. Charting (Optional) --- */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* --- 5. Component Specific --- */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --color-kaduna-green: var(--kaduna-green);
-  --color-kaduna-green-light: var(--kaduna-green-light);
-  --color-kaduna-green-lighter: var(--kaduna-green-lighter);
-  --color-kaduna-blue: var(--kaduna-blue);
-  --color-kaduna-blue-light: var(--kaduna-blue-light);
-  --color-kaduna-blue-lighter: var(--kaduna-blue-lighter);
-  --color-kaduna-gold: var(--kaduna-gold);
-  --color-kaduna-gold-light: var(--kaduna-gold-light);
-  --color-kaduna-navy: var(--kaduna-navy);
 }
 
+/* --- THEME DEFINITIONS --- */
+
 :root {
-  --radius: 0.625rem;
+  --radius: 0.5rem;
+
+  /* BACKGROUND: Clean White */
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
+
+  /* CARD: Slight off-white elevation */
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
+
+  /* POPOVER */
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
+
+  /* PRIMARY: Kaduna Green (Brand Identity) */
+  /* Hex #1B5E20 converted to OKLCH approximation for consistency */
+  --primary: oklch(0.43 0.12 145); 
+  --primary-foreground: oklch(0.985 0 0); /* White Text */
+
+  /* SECONDARY: Kaduna Blue (Support Color) */
+  /* Hex #0D47A1 converted */
+  --secondary: oklch(0.43 0.18 260);
+  --secondary-foreground: oklch(0.985 0 0);
+
+  /* ACCENT: Kaduna Gold (Used for highlights/hover) */
+  --accent: oklch(0.96 0.04 145); /* Very light green hint */
   --accent-foreground: oklch(0.205 0 0);
+
+  /* MUTED: Grayish Blue */
+  --muted: oklch(0.96 0.01 260);
+  --muted-foreground: oklch(0.556 0 0);
+
+  /* DESTRUCTIVE */
   --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  /* BORDERS & INPUTS */
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
   
-  /* Kaduna State Government Brand Colors */
-  /* Derived from the official Kaduna State Government seal/logo */
-  --kaduna-green: #1B5E20; /* Dark forest green from logo outer ring */
-  --kaduna-green-light: #E8F5E9; /* Light green for backgrounds and accents */
-  --kaduna-green-lighter: #C8E6C9; /* Lighter green for subtle backgrounds */
-  --kaduna-blue: #1565C0; /* Deep blue from logo outer ring (primary brand color) */
-  --kaduna-blue-light: #E3F2FD; /* Light blue for backgrounds */
-  --kaduna-blue-lighter: #BBDEFB; /* Lighter blue for subtle backgrounds */
-  --kaduna-gold: #D4A017; /* Gold/yellow from logo shield elements */
-  --kaduna-gold-light: #FFF9E6; /* Light gold for backgrounds */
-  --kaduna-navy: #0A2540; /* Dark navy for text on brand panels */
+  /* RING: Gold for focus states */
+  --ring: oklch(0.78 0.15 85); 
+
+  /* CHARTS: Brand Colors */
+  --chart-1: oklch(0.43 0.12 145); /* Green */
+  --chart-2: oklch(0.43 0.18 260); /* Blue */
+  --chart-3: oklch(0.78 0.15 85);  /* Gold */
+  --chart-4: oklch(0.60 0.12 145); /* Lighter Green */
+  --chart-5: oklch(0.60 0.18 260); /* Lighter Blue */
+
+  /* SIDEBAR: Dark Theme by default for Sidebar (Official Look) */
+  --sidebar: oklch(0.25 0.08 145); /* Dark Green Background */
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.78 0.15 85); /* Gold Active State */
+  --sidebar-primary-foreground: oklch(0.205 0 0);
+  --sidebar-accent: oklch(0.30 0.08 145);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.78 0.15 85);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  /* Dark Mode favors the Deep Navy/Green mix */
+  --background: oklch(0.145 0.02 145); /* Very Dark Green-Black */
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
+
+  --card: oklch(0.20 0.04 145);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+
+  --popover: oklch(0.20 0.04 145);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
+
+  /* Primary stays Green, but slightly lighter for contrast */
+  --primary: oklch(0.55 0.12 145); 
+  --primary-foreground: oklch(0.985 0 0);
+
+  --secondary: oklch(0.45 0.15 260);
   --secondary-foreground: oklch(0.985 0 0);
+
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
+
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
+
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  --border: oklch(1 0 0 / 15%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
+  --ring: oklch(0.78 0.15 85); /* Gold Ring */
+  
+  /* Sidebar in Dark Mode */
+  --sidebar: oklch(0.15 0.02 145);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary: oklch(0.55 0.12 145);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent: oklch(0.20 0.02 145);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: oklch(0.78 0.15 85);
 }
 
 @layer base {
@@ -137,4 +176,27 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* --- UTILITIES TO MATCH IMAGE --- */
+@utility bg-kaduna-gradient {
+  /* Replicates the wave gradient from the image: Green -> Transparent -> Blue -> Gold Accent */
+  background: linear-gradient(
+    135deg, 
+    var(--color-kaduna-green) 0%, 
+    rgba(27, 94, 32, 0.9) 40%, 
+    var(--color-kaduna-blue) 100%
+  );
+  position: relative;
+  overflow: hidden;
+}
+
+/* Overlay Utility for the "Seal" background effect */
+@utility bg-seal-pattern {
+  background-image: url('/path-to-seal.png'); /* User needs to add this file */
+  background-repeat: repeat;
+  background-size: 300px;
+  background-blend-mode: overlay;
+  opacity: 0.1;
+  mask-image: linear-gradient(to bottom, black, transparent);
 }

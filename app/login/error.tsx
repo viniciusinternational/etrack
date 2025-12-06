@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 
 export default function LoginError({
@@ -18,37 +18,42 @@ export default function LoginError({
   }, [error]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8 md:py-12 bg-gradient-to-br from-kaduna-blue-light/20 via-white to-kaduna-green-light/15">
-      <div className="w-full max-w-[440px] animate-in fade-in duration-500">
-        <Card className="border shadow-xl shadow-black/5">
-          {/* Header Section with Logo and Branding */}
-          <CardHeader className="text-center space-y-6 pb-8 border-b">
-            <div className="flex justify-center">
-              <div className="relative w-20 h-20 md:w-24 md:h-24">
-                <Image
-                  src="/kaduna-logo.png"
-                  alt="Kaduna State Government Logo"
-                  fill
-                  className="object-contain"
-                  priority
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = "none";
-                  }}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h1 className="text-xl md:text-2xl font-bold text-foreground tracking-tight">
-                Kaduna State Government
-              </h1>
-              <p className="text-lg md:text-xl font-semibold text-kaduna-blue">
-                E-Track
-              </p>
-            </div>
-          </CardHeader>
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 md:py-12 relative">
+      {/* Banner Background */}
+      <div className="fixed inset-0 z-0">
+        <Image
+          src="/banner.png"
+          alt="Kaduna State Government Banner"
+          fill
+          className="object-cover"
+          priority
+          quality={90}
+        />
+        {/* Overlay for readability */}
+        <div className="absolute inset-0 bg-background/30 dark:bg-background/75" />
+      </div>
 
-          <CardContent className="pt-8 pb-8 px-6 md:px-8">
+      {/* Centered Card */}
+      <div className="relative z-10 w-full max-w-md animate-in fade-in duration-500">
+        <Card className="border shadow-2xl bg-card/95 backdrop-blur-sm">
+          {/* Logo Section */}
+          <div className="flex justify-center pt-8 pb-6">
+            <div className="relative w-24 h-24 md:w-28 md:h-28">
+              <Image
+                src="/logo.png"
+                alt="Kaduna State Government Logo"
+                fill
+                className="object-contain"
+                priority
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = "none";
+                }}
+              />
+            </div>
+          </div>
+
+          <CardContent className="px-6 md:px-8 pb-8">
             <div className="space-y-6 text-center">
               <div className="flex justify-center">
                 <AlertCircle className="h-12 w-12 text-destructive" />
@@ -67,7 +72,7 @@ export default function LoginError({
                 </p>
                 <Button
                   onClick={reset}
-                  className="w-full bg-kaduna-blue hover:bg-kaduna-blue/90 text-white font-medium h-11 shadow-sm transition-all"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium h-11 shadow-sm transition-all"
                 >
                   Try again
                 </Button>
