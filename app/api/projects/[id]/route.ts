@@ -4,8 +4,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { createAuditLog, getUserInfoFromHeaders } from "@/lib/audit-logger";
 import { ProjectCategory, ProjectStatus } from "@prisma/client";
-import { requirePermission } from "@/lib/permission-middleware";
-import { PermissionModule, PermissionAction } from "@/lib/permission-constants";
+import { requireAuth } from "@/lib/api-permissions";
 
 const updateProjectSchema = z.object({
   title: z.string().min(1).optional(),
@@ -95,9 +94,9 @@ export async function PUT(
 ) {
   try {
     // Check permission
-    const permissionCheck = await requirePermission(request, PermissionModule.PROJECT, PermissionAction.UPDATE);
-    if (!permissionCheck.authorized) {
-      return permissionCheck.error!;
+    const authResult = await requireAuth(request, ['edit_project']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
 
     const { id } = await params;
@@ -177,9 +176,9 @@ export async function DELETE(
 ) {
   try {
     // Check permission
-    const permissionCheck = await requirePermission(request, PermissionModule.PROJECT, PermissionAction.DELETE);
-    if (!permissionCheck.authorized) {
-      return permissionCheck.error!;
+    const authResult = await requireAuth(request, ['delete_project']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
 
     const { id } = await params;

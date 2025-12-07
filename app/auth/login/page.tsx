@@ -74,6 +74,7 @@ export default function LoginPage() {
             role: user.role,
             mdaId: user.mdaId,
             mustChangePassword: user.mustChangePassword,
+            permissions: user.permissions,
           },
           token
         );

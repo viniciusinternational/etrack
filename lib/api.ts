@@ -8,11 +8,19 @@ import { ApiResponse, PaginatedResponse } from "@/types";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
 
+export interface ApiErrorDetails {
+  error?: string;
+  message?: string;
+  requiredPermissions?: string[];
+  details?: unknown;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
     public status: number,
-    public response?: Response
+    public response?: Response,
+    public details?: ApiErrorDetails
   ) {
     super(message);
     this.name = "ApiError";
@@ -39,10 +47,40 @@ export async function apiRequest<T = Record<string, unknown>>(
     });
 
     if (!response.ok) {
+      // Try to extract detailed error message from response
+      let errorDetails: ApiErrorDetails | undefined;
+      let errorMessage = `API request failed: ${response.statusText}`;
+      
+      try {
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.clone().json() as { ok?: boolean; error?: string; message?: string; requiredPermissions?: string[]; details?: unknown };
+          errorDetails = {
+            error: errorData.error,
+            message: errorData.message,
+            requiredPermissions: errorData.requiredPermissions,
+            details: errorData.details,
+          };
+          
+          // Use the most specific error message available
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          } else {
+            errorMessage = `API request failed: ${response.statusText}`;
+          }
+        }
+      } catch (parseError) {
+        // If JSON parsing fails, use default message
+        console.error("Failed to parse error response:", parseError);
+      }
+      
       throw new ApiError(
-        `API request failed: ${response.statusText}`,
+        errorMessage,
         response.status,
-        response
+        response,
+        errorDetails
       );
     }
 

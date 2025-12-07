@@ -20,20 +20,10 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useUser, useUpdateUser, useUserPermissions, useAssignUserPermissions, useRemoveUserPermission } from "@/hooks/use-users";
-import { useMDAs } from "@/hooks/use-mdas";
+import { useUser, useUserPermissionsJSON, useUpdateUserPermissionsJSON } from "@/hooks/use-users";
 import { Loader2, Key, Shield, CheckCircle2, XCircle } from "lucide-react";
-import { PermissionSelector } from "@/components/admin/permission-selector";
+import { PermissionsEditor } from "@/components/user/permissions-editor";
+import type { PartialUserPermissions } from "@/types/permissions";
 import { Badge } from "@/components/ui/badge";
 import axios from "axios";
 import { toast } from "sonner";
@@ -41,72 +31,23 @@ import { toast } from "sonner";
 export default function UserViewClient({ id }: { id: string }) {
   const router = useRouter();
   const { data: user, isLoading } = useUser(id);
-  const { data: mdasData } = useMDAs();
-  const { mutate: updateUser, isPending: isUpdating } = useUpdateUser();
-  const { data: userPermissionsData, isLoading: isLoadingPermissions } = useUserPermissions(id);
-  const { mutate: assignPermissions, isPending: isAssigningPermissions } = useAssignUserPermissions();
-  const { mutate: removePermission } = useRemoveUserPermission();
-
-  const mdas = mdasData || [];
-  const [isEditOpen, setIsEditOpen] = useState(false);
+  const { data: userPermissionsData, isLoading: isLoadingPermissions } = useUserPermissionsJSON(id);
+  const { mutate: updatePermissions, isPending: isUpdatingPermissions } = useUpdateUserPermissionsJSON();
   const [isPermissionsOpen, setIsPermissionsOpen] = useState(false);
   const [isGeneratePasswordOpen, setIsGeneratePasswordOpen] = useState(false);
-  const [form, setForm] = useState<UserFormData | null>(null);
-  const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([]);
+  const [permissions, setPermissions] = useState<PartialUserPermissions>({});
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) {
-      setForm({
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        mdaId: user.mdaId || "",
-        status: (user.status as "active" | "inactive") || "active",
-      });
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (userPermissionsData) {
-      const permissionIds = userPermissionsData.userPermissions.map((up) => up.permissionId);
-      setSelectedPermissionIds(permissionIds);
+    if (userPermissionsData?.permissions) {
+      setPermissions(userPermissionsData.permissions);
     }
   }, [userPermissionsData]);
 
-  function openEdit() {
-    setIsEditOpen(true);
-  }
-
-  function onSave() {
-    if (!user || !form) return;
-    const updates = {
-      name: form.name,
-      email: form.email,
-      role: form.role,
-      mdaId: form.mdaId,
-      mdaName: mdas.find((m) => m.id === form.mdaId)?.name,
-      status: form.status,
-    };
-
-    updateUser(
-      { id: user.id, ...updates },
-      {
-        onSuccess: () => {
-          setIsEditOpen(false);
-          toast.success("User updated successfully");
-        },
-        onError: () => {
-          toast.error("Failed to update user");
-        },
-      }
-    );
-  }
-
   function handleSavePermissions() {
     if (!user) return;
-    assignPermissions(
-      { userId: user.id, permissionIds: selectedPermissionIds },
+    updatePermissions(
+      { userId: user.id, permissions },
       {
         onSuccess: () => {
           setIsPermissionsOpen(false);
@@ -155,7 +96,7 @@ export default function UserViewClient({ id }: { id: string }) {
           <h1 className="text-2xl font-semibold">{user.name}</h1>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={openEdit}>
+          <Button variant="outline" onClick={() => router.push(`/users/${user.id}/edit`)}>
             <Edit className="mr-2 h-4 w-4" />
             Edit
           </Button>
@@ -248,20 +189,24 @@ export default function UserViewClient({ id }: { id: string }) {
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
-          ) : userPermissionsData && userPermissionsData.userPermissions.length > 0 ? (
+          ) : userPermissionsData && userPermissionsData.permissions ? (
             <div className="space-y-2">
               {Object.entries(
-                userPermissionsData.userPermissions.reduce((acc, up) => {
-                  if (!acc[up.module]) acc[up.module] = [];
-                  acc[up.module].push(up);
-                  return acc;
-                }, {} as Record<string, typeof userPermissionsData.userPermissions>)
+                Object.entries(userPermissionsData.permissions)
+                  .filter(([, enabled]) => enabled === true)
+                  .reduce((acc, [key]) => {
+                    const module = key.split('_').slice(1).join('_');
+                    const action = key.split('_')[0];
+                    if (!acc[module]) acc[module] = [];
+                    acc[module].push({ key, action, module });
+                    return acc;
+                  }, {} as Record<string, Array<{ key: string; action: string; module: string }>>)
               ).map(([module, perms]) => (
                 <div key={module} className="border rounded-lg p-3">
-                  <div className="font-semibold mb-2">{module}</div>
+                  <div className="font-semibold mb-2 capitalize">{module}</div>
                   <div className="flex flex-wrap gap-2">
                     {perms.map((perm) => (
-                      <Badge key={perm.id} variant="secondary">
+                      <Badge key={perm.key} variant="secondary" className="capitalize">
                         {perm.action}
                       </Badge>
                     ))}
@@ -294,114 +239,6 @@ export default function UserViewClient({ id }: { id: string }) {
         </CardContent>
       </Card>
 
-      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>
-              Update user information and permissions
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-6 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Full Name *</Label>
-                <Input
-                  id="edit-name"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-email">Email Address *</Label>
-                <Input
-                  id="edit-email"
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-role">Role *</Label>
-                <Select
-                  value={form.role}
-                  onValueChange={(value) =>
-                    setForm({ ...form, role: value as UserRole })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.values(UserRole).map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {role}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-mda">MDA *</Label>
-                <Select
-                  value={form.mdaId}
-                  onValueChange={(value) => setForm({ ...form, mdaId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select MDA" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {mdas.map((mda) => (
-                      <SelectItem key={mda.id} value={mda.id}>
-                        {mda.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <Label>Account Status</Label>
-              <RadioGroup
-                value={form.status}
-                onValueChange={(value) =>
-                  setForm({ ...form, status: value as "active" | "inactive" })
-                }
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="active" id="edit-status-active" />
-                  <Label
-                    htmlFor="edit-status-active"
-                    className="font-normal cursor-pointer"
-                  >
-                    Active
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="inactive" id="edit-status-inactive" />
-                  <Label
-                    htmlFor="edit-status-inactive"
-                    className="font-normal cursor-pointer"
-                  >
-                    Inactive
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={onSave} disabled={isUpdating}>
-              {isUpdating ? "Saving..." : "Save Changes"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Permissions Management Dialog */}
       <Dialog open={isPermissionsOpen} onOpenChange={setIsPermissionsOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -412,17 +249,17 @@ export default function UserViewClient({ id }: { id: string }) {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <PermissionSelector
-              selectedPermissionIds={selectedPermissionIds}
-              onSelectionChange={setSelectedPermissionIds}
+            <PermissionsEditor
+              permissions={permissions}
+              onPermissionsChange={setPermissions}
             />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsPermissionsOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSavePermissions} disabled={isAssigningPermissions}>
-              {isAssigningPermissions && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button onClick={handleSavePermissions} disabled={isUpdatingPermissions}>
+              {isUpdatingPermissions && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Permissions
             </Button>
           </DialogFooter>

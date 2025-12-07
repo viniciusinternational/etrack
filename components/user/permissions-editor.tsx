@@ -226,7 +226,7 @@ export function PermissionsEditor({
                 </CardHeader>
                 {isExpanded && (
                   <CardContent className="pt-0">
-                    <div className="space-y-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                       {perms.map((permissionKey) => {
                         const action = getActionFromPermissionKey(permissionKey);
                         const isSelected = permissions[permissionKey] === true;
@@ -246,16 +246,16 @@ export function PermissionsEditor({
                             <div className="flex-1 min-w-0">
                               <Label
                                 htmlFor={`perm-${permissionKey}`}
-                                className="flex items-center gap-2 cursor-pointer"
+                                className="flex items-center gap-2 cursor-pointer flex-wrap"
                               >
                                 <Badge variant={getActionBadgeVariant(action)} className="text-xs">
                                   {formatActionName(action)}
                                 </Badge>
-                                <span className="text-sm font-medium">
+                                <span className="text-sm font-medium truncate">
                                   {permissionKey}
                                 </span>
                               </Label>
-                              <p className="text-xs text-muted-foreground mt-1">
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
                                 {formatActionName(action)} {formatModuleName(module)}
                               </p>
                             </div>

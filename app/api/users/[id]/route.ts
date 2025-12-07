@@ -3,8 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { createAuditLog, getUserInfoFromHeaders } from "@/lib/audit-logger";
 import { UserRole } from "@prisma/client";
-import { checkUserPermission } from "@/lib/permissions";
-import { PermissionModule, PermissionAction } from "@/lib/permission-constants";
+import { requireAuth } from "@/lib/api-permissions";
 
 const updateUserSchema = z.object({
   name: z.string().min(1).optional(),
@@ -34,6 +33,7 @@ export async function GET(
         mustChangePassword: true,
         passwordChangedAt: true,
         lastLogin: true,
+        permissions: true,
         createdAt: true,
         updatedAt: true,
         mda: {
@@ -82,16 +82,13 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const { userId } = getUserInfoFromHeaders(request.headers);
     
     // Check if user has permission to update users
-    const hasPermission = await checkUserPermission(userId, PermissionModule.USER, PermissionAction.UPDATE);
-    if (!hasPermission) {
-      return NextResponse.json(
-        { ok: false, error: "Unauthorized: Insufficient permissions" },
-        { status: 403 }
-      );
+    const authResult = await requireAuth(request, ['edit_user']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
+    const { user } = authResult;
 
     const body = await request.json();
     const validatedData = updateUserSchema.parse(body);
@@ -127,6 +124,7 @@ export async function PUT(
         status: true,
         mustChangePassword: true,
         passwordChangedAt: true,
+        permissions: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -138,7 +136,7 @@ export async function PUT(
       const ip = headersList.get("x-forwarded-for") ?? undefined;
 
       await createAuditLog({
-        userId: userId || "system",
+        userId: user.id,
         userSnapshot,
         actionType: "UPDATE",
         entityType: "User",

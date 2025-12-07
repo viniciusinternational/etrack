@@ -13,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePermissions, useAllPermissions, Permission } from "@/hooks/use-permissions";
-import { PermissionModule, getPermissionsByModule } from "@/lib/permission-constants";
 import {
   Accordion,
   AccordionContent,
@@ -75,6 +74,8 @@ export default function PermissionsPage() {
       REJECT: "destructive",
       UPLOAD: "outline",
       MANAGE: "default",
+      VIEW: "secondary",
+      EDIT: "outline",
     };
     return variants[action] || "secondary";
   };
@@ -178,16 +179,16 @@ export default function PermissionsPage() {
                           .sort((a, b) => a.action.localeCompare(b.action))
                           .map((perm) => (
                             <div
-                              key={perm.id}
+                              key={perm.key || `${perm.module}-${perm.action}`}
                               className="flex items-start justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                             >
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <Badge variant={getActionBadgeVariant(perm.action)}>
+                                  <Badge variant={getActionBadgeVariant(perm.action.toUpperCase())}>
                                     {perm.action}
                                   </Badge>
                                   <span className="text-sm font-medium">
-                                    {perm.module}.{perm.action}
+                                    {perm.key || `${perm.module}.${perm.action}`}
                                   </span>
                                 </div>
                                 {perm.description && (

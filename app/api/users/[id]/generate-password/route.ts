@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generatePassword, hashPassword } from "@/lib/password";
-import { checkUserPermission } from "@/lib/permissions";
-import { PermissionModule, PermissionAction } from "@/lib/permission-constants";
+import { requireAuth } from "@/lib/api-permissions";
 import { getUserInfoFromHeaders, createAuditLog } from "@/lib/audit-logger";
 
 export async function POST(
@@ -11,16 +10,13 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { userId } = getUserInfoFromHeaders(request.headers);
 
     // Check if user has permission to update users
-    const hasPermission = await checkUserPermission(userId, PermissionModule.USER, PermissionAction.UPDATE);
-    if (!hasPermission) {
-      return NextResponse.json(
-        { ok: false, error: "Unauthorized: Insufficient permissions" },
-        { status: 403 }
-      );
+    const authResult = await requireAuth(request, ['edit_user']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
+    const { user } = authResult;
 
     // Verify target user exists
     const targetUser = await prisma.user.findUnique({
@@ -60,7 +56,7 @@ export async function POST(
       const ip = headersList.get("x-forwarded-for") ?? undefined;
 
       await createAuditLog({
-        userId: userId || "system",
+        userId: user.id,
         userSnapshot,
         actionType: "UPDATE",
         entityType: "User",

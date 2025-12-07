@@ -5,6 +5,7 @@
 
 import { post } from "./api";
 import { UserRole } from "@/types";
+import type { UserPermissions } from "@/types/permissions";
 
 export interface LoginResponse {
   user: {
@@ -14,6 +15,7 @@ export interface LoginResponse {
     role: UserRole;
     mdaId?: string;
     mustChangePassword: boolean;
+    permissions?: UserPermissions;
   };
   token: string;
 }

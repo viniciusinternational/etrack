@@ -1,6 +1,7 @@
 "use client";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Plus, Search, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { GlobalTable } from "@/components/global/global-table";
 import {
@@ -11,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-// dropdown menu removed; actions handled via edit icon in table row
 import {
   Select,
   SelectContent,
@@ -22,7 +22,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -30,30 +29,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-// bulk selection removed
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 // use shared types
 import { User, UserRole } from "@/types";
-import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, useUserPermissions, useAssignUserPermissions } from "@/hooks/use-users";
+import { useUsers, useDeleteUser } from "@/hooks/use-users";
 import { useMDAs } from "@/hooks/use-mdas";
-import { PermissionSelector } from "@/components/admin/permission-selector";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
+import { toast } from "sonner";
 
 // Mock Data removed
 
 export default function UserManagementPage() {
   // Check authentication and permission
   const { isChecking } = useAuthGuard(['view_user']);
+  const router = useRouter();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const { data: usersData } = useUsers();
   const { data: mdasData } = useMDAs();
-  const { mutate: createUser, isPending: isCreating } = useCreateUser();
-  const { mutate: updateUser, isPending: isUpdating } = useUpdateUser();
   const { mutate: deleteUser, isPending: isDeleting } = useDeleteUser();
-  const { mutate: assignPermissions, isPending: isAssigningPermissions } = useAssignUserPermissions();
   
   const users = useMemo(() => usersData || [], [usersData]);
   const mdas = mdasData || [];
@@ -62,18 +56,7 @@ export default function UserManagementPage() {
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [mdaFilter, setMdaFilter] = useState<string>("all");
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    role: UserRole.MeetingUser,
-    mdaId: "",
-    status: "active" as "active" | "inactive",
-    generatePassword: false,
-  });
-  const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([]);
 
   // Statistics
   const stats = useMemo(() => {
@@ -106,102 +89,18 @@ export default function UserManagementPage() {
   }, [users, searchTerm, roleFilter, statusFilter, mdaFilter]);
 
   // Handlers
-  const handleAddUser = () => {
-    const newUser: any = {
-      name: formData.name,
-      email: formData.email,
-      role: formData.role,
-      mdaId: formData.mdaId || undefined,
-      status: formData.status,
-      generatePassword: formData.generatePassword,
-    };
-
-    if (selectedPermissionIds.length > 0) {
-      newUser.permissionIds = selectedPermissionIds;
-    }
-
-    createUser(newUser, {
-      onSuccess: (data: any) => {
-        setIsAddDialogOpen(false);
-        resetForm();
-        if (data?.generatedPassword) {
-          alert(`User created successfully!\n\nGenerated Password: ${data.generatedPassword}\n\nUser must change password on first login.`);
-        }
-      },
-      onError: (error) => {
-        console.error("Failed to create user:", error);
-        alert("Failed to create user. Check console for details.");
-      }
-    });
-  };
-
-  // Load user permissions when editing
-  const { data: userPermissionsData } = useUserPermissions(selectedUser?.id || "");
-  
-  // Update selected permissions when user permissions load
-  useEffect(() => {
-    if (userPermissionsData && selectedUser && isEditDialogOpen) {
-      const permissionIds = userPermissionsData.userPermissions.map((up) => up.permissionId);
-      setSelectedPermissionIds(permissionIds);
-    }
-  }, [userPermissionsData, selectedUser, isEditDialogOpen]);
-
-  const handleEditUser = () => {
-    if (!selectedUser) return;
-    const updates: any = {
-      name: formData.name,
-      email: formData.email,
-      role: formData.role,
-      mdaId: formData.mdaId || undefined,
-      status: formData.status,
-    };
-    
-    updateUser({ id: selectedUser.id, ...updates }, {
-      onSuccess: () => {
-        // Assign permissions if any are selected
-        if (selectedPermissionIds.length > 0) {
-          assignPermissions(
-            { userId: selectedUser.id, permissionIds: selectedPermissionIds },
-            {
-              onSuccess: () => {
-                setIsEditDialogOpen(false);
-                setSelectedUser(null);
-                resetForm();
-              },
-            }
-          );
-        } else {
-          setIsEditDialogOpen(false);
-          setSelectedUser(null);
-          resetForm();
-        }
-      }
-    });
-  };
-
   const handleDeleteUser = () => {
     if (!selectedUser) return;
     deleteUser(selectedUser.id, {
       onSuccess: () => {
         setIsDeleteDialogOpen(false);
         setSelectedUser(null);
-      }
+        toast.success("User deleted successfully");
+      },
+      onError: () => {
+        toast.error("Failed to delete user");
+      },
     });
-  };
-
-
-
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      email: "",
-      role: UserRole.MeetingUser,
-      mdaId: "",
-      status: "active",
-      generatePassword: false,
-    });
-    setSelectedPermissionIds([]);
-    setSearchTerm(""); // Clear search bar
   };
 
   // selection helpers removed (list is row-click navigable)
@@ -245,7 +144,7 @@ export default function UserManagementPage() {
             Manage user accounts, roles, and permissions
           </p>
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)} size="lg">
+        <Button onClick={() => router.push("/users/new")} size="lg">
           <Plus className="mr-2 h-4 w-4" />
           Add New User
         </Button>
@@ -457,287 +356,6 @@ export default function UserManagementPage() {
           />
         </CardContent>
       </Card>
-
-      {/* Add User Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add New User</DialogTitle>
-            <DialogDescription>
-              Create a new user account with appropriate role and permissions
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-6 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  placeholder="Enter full name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  placeholder="Enter email address"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="role">Role *</Label>
-                <Select
-                  value={formData.role}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, role: value as UserRole })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.values(UserRole).map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {role}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mda">MDA *</Label>
-                <Select
-                  value={formData.mdaId}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, mdaId: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select MDA" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {mdas.map((mda) => (
-                      <SelectItem key={mda.id} value={mda.id}>
-                        {mda.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <Label>Account Status</Label>
-              <RadioGroup
-                value={formData.status}
-                onValueChange={(value) =>
-                  setFormData({
-                    ...formData,
-                    status: value as "active" | "inactive",
-                  })
-                }
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="active" id="status-active" />
-                  <Label
-                    htmlFor="status-active"
-                    className="font-normal cursor-pointer"
-                  >
-                    Active
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="inactive" id="status-inactive" />
-                  <Label
-                    htmlFor="status-inactive"
-                    className="font-normal cursor-pointer"
-                  >
-                    Inactive
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="generate-password"
-                  checked={formData.generatePassword}
-                  onCheckedChange={(checked) =>
-                    setFormData({
-                      ...formData,
-                      generatePassword: checked as boolean,
-                    })
-                  }
-                />
-                <Label
-                  htmlFor="generate-password"
-                  className="font-normal cursor-pointer"
-                >
-                  Generate password (user must change on first login)
-                </Label>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <Label>Permissions</Label>
-              <div className="border rounded-lg p-4">
-                <PermissionSelector
-                  selectedPermissionIds={selectedPermissionIds}
-                  onSelectionChange={setSelectedPermissionIds}
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddUser} disabled={isCreating}>
-              {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create User
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit User Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>
-              Update user information and permissions
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-6 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Full Name *</Label>
-                <Input
-                  id="edit-name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-email">Email Address *</Label>
-                <Input
-                  id="edit-email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-role">Role *</Label>
-                <Select
-                  value={formData.role}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, role: value as UserRole })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.values(UserRole).map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {role}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-mda">MDA *</Label>
-                <Select
-                  value={formData.mdaId}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, mdaId: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {mdas.map((mda) => (
-                      <SelectItem key={mda.id} value={mda.id}>
-                        {mda.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <Label>Account Status</Label>
-              <RadioGroup
-                value={formData.status}
-                onValueChange={(value) =>
-                  setFormData({
-                    ...formData,
-                    status: value as "active" | "inactive",
-                  })
-                }
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="active" id="edit-status-active" />
-                  <Label
-                    htmlFor="edit-status-active"
-                    className="font-normal cursor-pointer"
-                  >
-                    Active
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="inactive" id="edit-status-inactive" />
-                  <Label
-                    htmlFor="edit-status-inactive"
-                    className="font-normal cursor-pointer"
-                  >
-                    Inactive
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-            <div className="space-y-3">
-              <Label>Permissions</Label>
-              <div className="border rounded-lg p-4">
-                <PermissionSelector
-                  selectedPermissionIds={selectedPermissionIds}
-                  onSelectionChange={setSelectedPermissionIds}
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsEditDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleEditUser} disabled={isUpdating || isAssigningPermissions}>
-              {(isUpdating || isAssigningPermissions) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

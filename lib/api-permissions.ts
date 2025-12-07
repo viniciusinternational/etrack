@@ -80,11 +80,15 @@ export async function requireAuth(
   requiredPermissions?: PermissionKey[]
 ): Promise<{ user: User } | NextResponse> {
   const user = await getUserFromRequest(request);
-  
+  console.log({user})
   // Check authentication
   if (!user) {
     return NextResponse.json(
-      { ok: false, error: 'Unauthorized' },
+      { 
+        ok: false, 
+        error: 'Unauthorized',
+        message: 'You must be logged in to access this resource. Please log in and try again.'
+      },
       { status: 401 }
     );
   }
@@ -92,7 +96,11 @@ export async function requireAuth(
   // Check if user is active
   if (user.status !== 'active') {
     return NextResponse.json(
-      { ok: false, error: 'Account is deactivated' },
+      { 
+        ok: false, 
+        error: 'Account is deactivated',
+        message: 'Your account has been deactivated. Please contact your administrator for assistance.'
+      },
       { status: 403 }
     );
   }
@@ -100,10 +108,15 @@ export async function requireAuth(
   // Check permissions if required
   if (requiredPermissions && requiredPermissions.length > 0) {
     if (!hasAnyPermission(user, requiredPermissions)) {
+      const permissionsList = requiredPermissions.length === 1
+        ? `permission: ${requiredPermissions[0]}`
+        : `one of the following permissions: ${requiredPermissions.join(', ')}`;
+      
       return NextResponse.json(
         { 
           ok: false, 
           error: 'Forbidden: Missing required permissions',
+          message: `You don't have the required ${permissionsList}. Please contact your administrator to request access.`,
           requiredPermissions 
         },
         { status: 403 }

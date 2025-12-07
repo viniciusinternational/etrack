@@ -1,12 +1,24 @@
 "use client";
 
+/**
+ * AppSidebar - Professional, responsive, accessible sidebar
+ * Features:
+ * - Collapsible with icon-only mode
+ * - Hover tooltips when collapsed
+ * - Full keyboard navigation
+ * - Mobile-responsive slide-in drawer
+ * - Theme-matched styling (Kaduna Green/Blue/Gold)
+ * - Permission-based navigation filtering
+ */
+
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
 import { useMemo } from "react";
-import { BarChart3, Settings, Home } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { useAuthStore } from "@/store/auth-store";
 import { getNavigationForPermissions } from "@/lib/navigation";
-
+import { getRoleDisplayName } from "@/lib/auth";
 import {
   Sidebar,
   SidebarContent,
@@ -19,11 +31,22 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuBadge,
+  useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { user } = useAuthStore();
+  const router = useRouter();
+  const { user, logout } = useAuthStore();
+  const { state, isMobile } = useSidebar();
 
   // Get filtered navigation items based on user permissions
   const navItems = useMemo(() => {
@@ -31,136 +54,262 @@ export function AppSidebar() {
   }, [user]);
 
   const getBadgeCount = (href: string) => {
+    // Placeholder badge counts - can be connected to real data later
     if (href.includes("submissions")) return 8;
     if (href.includes("projects")) return 3;
     if (href.includes("tenders")) return 5;
     return 0;
   };
 
+  const handleLogout = () => {
+    logout();
+    toast.success("Logged out successfully");
+    router.push("/auth/login");
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const isCollapsed = state === "collapsed" && !isMobile;
+
   return (
-    <Sidebar className="border-r-0 shadow-lg backdrop-blur-sm bg-gradient-to-b from-background to-background/95">
-      <SidebarHeader className="border-b border-border/50 bg-gradient-to-r from-primary/5 to-primary/10">
+    <Sidebar
+      collapsible="icon"
+      className="border-r border-sidebar-border/50 bg-sidebar shadow-lg"
+    >
+      {/* Header with Logo */}
+      <SidebarHeader className="border-b border-sidebar-border/50 bg-gradient-to-r from-sidebar-primary/10 via-sidebar-primary/5 to-transparent">
         <div className="flex items-center gap-3 px-3 py-4">
-          <div className="relative">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/25">
-              <Home className="h-5 w-5" />
+          <div className="relative flex-shrink-0">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/20">
+              {isCollapsed ? (
+                <Image
+                  src="/logo.png"
+                  alt="E-Track Logo"
+                  width={24}
+                  height={24}
+                  className="object-contain"
+                  priority
+                />
+              ) : (
+                <Image
+                  src="/logo.png"
+                  alt="E-Track Logo"
+                  width={32}
+                  height={32}
+                  className="object-contain"
+                  priority
+                />
+              )}
             </div>
           </div>
-          <div className="flex flex-col">
-            <span className="text-base font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-              E-Track
-            </span>
-            <span className="text-xs text-muted-foreground font-medium">
-              Unified System
-            </span>
-          </div>
+          {!isCollapsed && (
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="text-base font-bold text-sidebar-foreground truncate">
+                E-Track
+              </span>
+              <span className="text-xs text-sidebar-foreground/70 font-medium truncate">
+                {user ? getRoleDisplayName(user.role) : "System"}
+              </span>
+            </div>
+          )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 py-4">
+      {/* Navigation Content */}
+      <SidebarContent className="px-2 py-4 gap-2">
         <SidebarGroup>
-          <SidebarGroupLabel className="px-3 py-2 text-xs font-semibold text-muted-foreground/80 uppercase tracking-wider">
-            Main Menu
-          </SidebarGroupLabel>
+          {!isCollapsed && (
+            <SidebarGroupLabel className="px-3 py-2 text-xs font-semibold text-sidebar-foreground/70 uppercase tracking-wider">
+              Navigation
+            </SidebarGroupLabel>
+          )}
 
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const active = pathname.startsWith(item.href);
+                const active = pathname === item.href || pathname.startsWith(item.href + "/");
                 const badgeCount = getBadgeCount(item.href);
 
-                return (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={active}
-                      className={`relative group h-11 rounded-xl transition-all duration-200 ease-out
-                        hover:shadow-md hover:shadow-primary/10
-                        ${
-                          active
-                            ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg shadow-primary/25"
-                            : "hover:bg-gradient-to-r hover:from-accent/50 hover:to-accent/30"
-                        }`}
+                const menuButton = (
+                  <SidebarMenuButton
+                    asChild
+                    isActive={active}
+                    tooltip={isCollapsed ? item.label : undefined}
+                    className={cn(
+                      "relative group h-11 rounded-lg transition-all duration-200 ease-out",
+                      "hover:shadow-md hover:shadow-primary/10",
+                      active
+                        ? "bg-gradient-to-r from-sidebar-primary to-sidebar-primary/90 text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/25 font-semibold"
+                        : "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground text-sidebar-foreground/80"
+                    )}
+                  >
+                    <Link
+                      href={item.href}
+                      className="flex items-center gap-3 px-3 w-full"
+                      aria-label={item.label}
                     >
-                      <Link
-                        href={item.href}
-                        className="flex items-center gap-3 px-3"
+                      <div
+                        className={cn(
+                          "relative flex h-8 w-8 items-center justify-center rounded-md transition-all duration-200 flex-shrink-0",
+                          active
+                            ? "bg-sidebar-primary-foreground/20 text-sidebar-primary-foreground"
+                            : "bg-sidebar-accent/30 text-sidebar-foreground/70 group-hover:bg-sidebar-primary/20 group-hover:text-sidebar-primary"
+                        )}
                       >
-                        <div
-                          className={`relative flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200
-                            ${
-                              active
-                                ? "bg-primary-foreground/20 text-primary-foreground"
-                                : "bg-muted/50 text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"
-                            }`}
-                        >
-                          <Icon className="h-4 w-4" />
-                        </div>
-                        <span
-                          className={`font-medium transition-colors duration-200 ${
-                            active
-                              ? "text-primary-foreground"
-                              : "text-foreground group-hover:text-primary"
-                          }`}
-                        >
+                        <Icon className="h-4 w-4" aria-hidden="true" />
+                      </div>
+                      {!isCollapsed && (
+                        <span className="font-medium transition-colors duration-200 flex-1 truncate">
                           {item.label}
                         </span>
-                        {badgeCount > 0 && !active && (
-                          <SidebarMenuBadge className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-sm">
+                      )}
+                      {badgeCount > 0 && !isCollapsed && (
+                        <SidebarMenuBadge className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-sm ml-auto">
+                          {badgeCount}
+                        </SidebarMenuBadge>
+                      )}
+                    </Link>
+                  </SidebarMenuButton>
+                );
+
+                // Wrap in tooltip if collapsed
+                if (isCollapsed) {
+                  return (
+                    <Tooltip key={item.id} delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <SidebarMenuItem>{menuButton}</SidebarMenuItem>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="right"
+                        align="center"
+                        className="bg-sidebar-accent text-sidebar-accent-foreground border-sidebar-border"
+                      >
+                        {item.label}
+                        {badgeCount > 0 && (
+                          <span className="ml-2 px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-xs font-semibold">
                             {badgeCount}
-                          </SidebarMenuBadge>
+                          </span>
                         )}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                }
+
+                return (
+                  <SidebarMenuItem key={item.id}>{menuButton}</SidebarMenuItem>
                 );
               })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+      </SidebarContent>
 
-        {/* Optional Stats */}
-        <div className="mt-6 px-3">
-          <div className="rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 p-4 border border-border/50">
-            <div className="flex items-center gap-2 mb-3">
-              <BarChart3 className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-foreground">
-                Quick Stats
-              </span>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">
-                  Active Projects
+      {/* Footer with User Info and Actions */}
+      <SidebarFooter className="border-t border-sidebar-border/50 bg-gradient-to-r from-sidebar-accent/10 via-sidebar-accent/5 to-transparent p-2 gap-2">
+        {/* User Profile Section */}
+        {!isCollapsed && user && (
+          <div className="px-3 py-2 rounded-lg bg-sidebar-accent/20 border border-sidebar-border/50 mb-2">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-8 w-8 border-2 border-sidebar-primary/30">
+                <AvatarImage src="" alt={user.name} />
+                <AvatarFallback className="bg-gradient-to-br from-sidebar-primary via-sidebar-primary/90 to-sidebar-primary/70 text-sidebar-primary-foreground font-semibold text-xs">
+                  {getInitials(user.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-sm font-semibold text-sidebar-foreground truncate">
+                  {user.name}
                 </span>
-                <span className="text-sm font-bold text-primary">24</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">
-                  Pending Reviews
+                <span className="text-xs text-sidebar-foreground/70 truncate">
+                  {user.email}
                 </span>
-                <span className="text-sm font-bold text-orange-600">8</span>
               </div>
             </div>
           </div>
-        </div>
-      </SidebarContent>
+        )}
 
-      <SidebarFooter className="border-t border-border/50 bg-gradient-to-r from-muted/20 to-muted/10 p-2">
-        <SidebarMenu>
+        {/* Settings and Logout */}
+        <SidebarMenu className="space-y-1">
+          {/* Settings */}
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="h-11 rounded-xl transition-all duration-200 hover:shadow-md hover:shadow-primary/10 hover:bg-gradient-to-r hover:from-accent/50 hover:to-accent/30"
-            >
-              <Link href="/settings" className="flex items-center gap-3 px-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary transition-all duration-200">
-                  <Settings className="h-4 w-4" />
-                </div>
-                <span className="font-medium">Settings</span>
-              </Link>
-            </SidebarMenuButton>
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <SidebarMenuButton
+                  asChild
+                  tooltip={isCollapsed ? "Settings" : undefined}
+                  className={cn(
+                    "h-11 rounded-lg transition-all duration-200",
+                    "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground text-sidebar-foreground/80"
+                  )}
+                >
+                  <Link
+                    href="/settings"
+                    className="flex items-center gap-3 px-3 w-full"
+                    aria-label="Settings"
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sidebar-accent/30 text-sidebar-foreground/70 transition-all duration-200 group-hover:bg-sidebar-primary/20 group-hover:text-sidebar-primary flex-shrink-0">
+                      <Settings className="h-4 w-4" aria-hidden="true" />
+                    </div>
+                    {!isCollapsed && (
+                      <span className="font-medium">Settings</span>
+                    )}
+                  </Link>
+                </SidebarMenuButton>
+              </TooltipTrigger>
+              {isCollapsed && (
+                <TooltipContent
+                  side="right"
+                  align="center"
+                  className="bg-sidebar-accent text-sidebar-accent-foreground border-sidebar-border"
+                >
+                  Settings
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </SidebarMenuItem>
+
+          {/* Logout */}
+          <SidebarMenuItem>
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <SidebarMenuButton
+                  onClick={handleLogout}
+                  tooltip={isCollapsed ? "Sign out" : undefined}
+                  className={cn(
+                    "h-11 rounded-lg transition-all duration-200 w-full",
+                    "hover:bg-destructive/10 hover:text-destructive text-sidebar-foreground/80",
+                    "focus-visible:ring-2 focus-visible:ring-destructive/50"
+                  )}
+                  aria-label="Sign out"
+                >
+                  <div className="flex items-center gap-3 px-3 w-full">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-destructive/10 text-destructive/70 transition-all duration-200 group-hover:bg-destructive/20 group-hover:text-destructive flex-shrink-0">
+                      <LogOut className="h-4 w-4" aria-hidden="true" />
+                    </div>
+                    {!isCollapsed && (
+                      <span className="font-medium">Sign out</span>
+                    )}
+                  </div>
+                </SidebarMenuButton>
+              </TooltipTrigger>
+              {isCollapsed && (
+                <TooltipContent
+                  side="right"
+                  align="center"
+                  className="bg-sidebar-accent text-sidebar-accent-foreground border-sidebar-border"
+                >
+                  Sign out
+                </TooltipContent>
+              )}
+            </Tooltip>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
+import axiosInstance from "@/lib/axios-config";
 import { ApiResponse } from "@/types";
 
 interface UploadResponse {
@@ -15,7 +15,7 @@ export function useUpload() {
       const formData = new FormData();
       formData.append("file", file);
       
-      const { data } = await axios.post<ApiResponse<UploadResponse>>(API_URL, formData, {
+      const { data } = await axiosInstance.post<ApiResponse<UploadResponse>>(API_URL, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },

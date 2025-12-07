@@ -1,14 +1,12 @@
 import { useMemo } from "react";
-import { PermissionModule, PermissionAction } from "@/lib/permission-constants";
-import { useUserPermissions } from "@/hooks/use-users";
 import { useAuthStore } from "@/store/auth-store";
+import { hasPermission } from "@/lib/permissions";
 
 export function useProjectPermissions() {
   const { user } = useAuthStore();
-  const { data: userPermissionsData } = useUserPermissions(user?.id || "");
 
   return useMemo(() => {
-    if (!userPermissionsData || !user) {
+    if (!user) {
       return {
         canCreate: false,
         canRead: false,
@@ -19,24 +17,14 @@ export function useProjectPermissions() {
       };
     }
 
-    // Get PROJECT module permissions from allPermissions array
-    const projectPermissions = userPermissionsData.allPermissions.filter(
-      (p) => p.module === PermissionModule.PROJECT && p.assigned
-    );
-
-    // Check if user has specific permissions
-    const hasPermission = (action: PermissionAction): boolean => {
-      return projectPermissions.some((p) => p.action === action);
-    };
-
     return {
-      canCreate: hasPermission(PermissionAction.CREATE),
-      canRead: hasPermission(PermissionAction.READ),
-      canUpdate: hasPermission(PermissionAction.UPDATE),
-      canDelete: hasPermission(PermissionAction.DELETE),
-      canExport: hasPermission(PermissionAction.EXPORT),
-      canManage: hasPermission(PermissionAction.MANAGE),
+      canCreate: hasPermission(user, 'create_project'),
+      canRead: hasPermission(user, 'view_project'),
+      canUpdate: hasPermission(user, 'edit_project'),
+      canDelete: hasPermission(user, 'delete_project'),
+      canExport: hasPermission(user, 'export_project'),
+      canManage: hasPermission(user, 'manage_project'),
     };
-  }, [userPermissionsData, user]);
+  }, [user]);
 }
 

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import axiosInstance from "@/lib/axios-config";
 import { ApiResponse, Project } from "@/types";
 
 const API_URL = "/api/projects";
@@ -8,7 +8,7 @@ export function useProjects() {
   return useQuery({
     queryKey: ["projects"],
     queryFn: async () => {
-      const { data } = await axios.get<ApiResponse<Project[]>>(API_URL);
+      const { data } = await axiosInstance.get<ApiResponse<Project[]>>(API_URL);
       return data.data;
     },
   });
@@ -18,7 +18,7 @@ export function useProject(id: string) {
   return useQuery({
     queryKey: ["projects", id],
     queryFn: async () => {
-      const { data } = await axios.get<ApiResponse<Project>>(`${API_URL}/${id}`);
+      const { data } = await axiosInstance.get<ApiResponse<Project>>(`${API_URL}/${id}`);
       return data.data;
     },
     enabled: !!id,
@@ -29,7 +29,7 @@ export function useCreateProject() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (newItem: Partial<Project>) => {
-      const { data } = await axios.post<ApiResponse<Project>>(API_URL, newItem);
+      const { data } = await axiosInstance.post<ApiResponse<Project>>(API_URL, newItem);
       return data.data;
     },
     onSuccess: () => {
@@ -43,7 +43,7 @@ export function useUpdateProject() {
   return useMutation({
     mutationFn: async (updates: { id: string } & Partial<Project>) => {
       const { id, ...updateData } = updates;
-      const { data } = await axios.put<ApiResponse<Project>>(`${API_URL}/${id}`, updateData);
+      const { data } = await axiosInstance.put<ApiResponse<Project>>(`${API_URL}/${id}`, updateData);
       return data.data;
     },
     onSuccess: (_, variables) => {
@@ -57,7 +57,7 @@ export function useDeleteProject() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data } = await axios.delete<ApiResponse<Project>>(`${API_URL}/${id}`);
+      const { data } = await axiosInstance.delete<ApiResponse<Project>>(`${API_URL}/${id}`);
       return data.data;
     },
     onSuccess: () => {

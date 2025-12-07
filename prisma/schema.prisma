@@ -131,8 +131,6 @@ model User {
   createdPayments   Payment[] @relation("CreatedPayments")
   submittedPayments Payment[] @relation("SubmittedPayments")
 
-  userPermissions UserPermission[] @relation("UserPermissions") // Legacy relation - kept for migration
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -532,34 +530,3 @@ model AuditLog {
 // PERMISSIONS
 // =====================================================
 
-model Permission {
-  id          String  @id @default(cuid())
-  module      String // e.g., "USER", "PROJECT", "BUDGET"
-  action      String // e.g., "CREATE", "READ", "UPDATE", "DELETE"
-  description String?
-
-  // Relations
-  userPermissions UserPermission[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([module, action])
-  @@index([module])
-  @@index([action])
-}
-
-model UserPermission {
-  id           String     @id @default(cuid())
-  userId       String
-  user         User       @relation("UserPermissions", fields: [userId], references: [id], onDelete: Cascade)
-  permissionId String
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId, permissionId])
-  @@index([userId])
-  @@index([permissionId])
-}

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import axiosInstance from "@/lib/axios-config";
 import { ApiResponse } from "@/types";
 
 export interface BudgetAllocation {
@@ -26,7 +26,7 @@ export function useBudgets() {
   return useQuery({
     queryKey: ["budgets"],
     queryFn: async () => {
-      const { data } = await axios.get<ApiResponse<BudgetAllocation[]>>(
+      const { data } = await axiosInstance.get<ApiResponse<BudgetAllocation[]>>(
         API_URL
       );
       return data.data;
@@ -38,7 +38,7 @@ export function useBudget(id: string) {
   return useQuery({
     queryKey: ["budgets", id],
     queryFn: async () => {
-      const { data } = await axios.get<ApiResponse<BudgetAllocation>>(
+      const { data } = await axiosInstance.get<ApiResponse<BudgetAllocation>>(
         `${API_URL}/${id}`
       );
       return data.data;
@@ -51,7 +51,7 @@ export function useCreateBudget() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (newItem: Partial<BudgetAllocation>) => {
-      const { data } = await axios.post<ApiResponse<BudgetAllocation>>(
+      const { data } = await axiosInstance.post<ApiResponse<BudgetAllocation>>(
         API_URL,
         newItem
       );
@@ -70,7 +70,7 @@ export function useUpdateBudget() {
       id,
       ...updates
     }: { id: string } & Partial<BudgetAllocation>) => {
-      const { data } = await axios.put<ApiResponse<BudgetAllocation>>(
+      const { data } = await axiosInstance.put<ApiResponse<BudgetAllocation>>(
         `${API_URL}/${id}`,
         updates
       );
@@ -86,7 +86,7 @@ export function useDeleteBudget() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data } = await axios.delete<ApiResponse<BudgetAllocation>>(
+      const { data } = await axiosInstance.delete<ApiResponse<BudgetAllocation>>(
         `${API_URL}/${id}`
       );
       return data.data;

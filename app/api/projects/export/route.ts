@@ -2,16 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { ProjectCategory, ProjectStatus } from "@prisma/client";
-import { requirePermission } from "@/lib/permission-middleware";
-import { PermissionModule, PermissionAction } from "@/lib/permission-constants";
+import { requireAuth } from "@/lib/api-permissions";
 import { createAuditLog, getUserInfoFromHeaders } from "@/lib/audit-logger";
 
 export async function GET(request: NextRequest) {
   try {
     // Check permission
-    const permissionCheck = await requirePermission(request, PermissionModule.PROJECT, PermissionAction.EXPORT);
-    if (!permissionCheck.authorized) {
-      return permissionCheck.error!;
+    const authResult = await requireAuth(request, ['export_project']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
 
     const { searchParams } = new URL(request.url);
