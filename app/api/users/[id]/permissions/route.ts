@@ -1,71 +1,59 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-import { PermissionModule, PermissionAction } from "@/lib/permission-constants";
-import { checkUserPermission } from "@/lib/permissions";
-import { getUserInfoFromHeaders } from "@/lib/audit-logger";
+import { requireAuth } from "@/lib/api-permissions";
+import type { PartialUserPermissions } from "@/types/permissions";
+import { ALL_PERMISSION_KEYS } from "@/types/permissions";
 
-const assignPermissionSchema = z.object({
-  permissionIds: z.array(z.string()).min(1, "At least one permission ID is required"),
+const updatePermissionsSchema = z.object({
+  permissions: z.record(z.string(), z.boolean()).optional(),
 });
 
+/**
+ * GET /api/users/[id]/permissions
+ * Get user's permissions in JSON format
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const { userId } = getUserInfoFromHeaders(request.headers);
+    
+    // Check authentication and permission to view user permissions
+    const authResult = await requireAuth(request, ['view_user']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
 
-    // Check if user has permission to view user permissions
-    const hasPermission = await checkUserPermission(userId, PermissionModule.USER, PermissionAction.READ);
-    if (!hasPermission) {
+    // Get user with permissions
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        permissions: true,
+      },
+    });
+
+    if (!user) {
       return NextResponse.json(
-        { ok: false, error: "Unauthorized: Insufficient permissions" },
-        { status: 403 }
+        { ok: false, error: "User not found" },
+        { status: 404 }
       );
     }
 
-    // Get user's permissions
-    const userPermissions = await prisma.userPermission.findMany({
-      where: { userId: id },
-      include: {
-        permission: true,
-      },
-      orderBy: {
-        permission: {
-          module: "asc",
-        },
-      },
-    });
-
-    // Also get all available permissions to show which ones are assigned
-    const allPermissions = await prisma.permission.findMany({
-      orderBy: [
-        { module: "asc" },
-        { action: "asc" },
-      ],
-    });
-
-    const assignedPermissionIds = new Set(userPermissions.map((up) => up.permissionId));
+    // Return permissions JSON (or empty object if null)
+    const permissions = (user.permissions as PartialUserPermissions) || {};
 
     return NextResponse.json({
       ok: true,
       data: {
-        userPermissions: userPermissions.map((up) => ({
-          id: up.id,
-          permissionId: up.permission.id,
-          module: up.permission.module,
-          action: up.permission.action,
-          description: up.permission.description,
-        })),
-        allPermissions: allPermissions.map((p) => ({
-          id: p.id,
-          module: p.module,
-          action: p.action,
-          description: p.description,
-          assigned: assignedPermissionIds.has(p.id),
-        })),
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+        permissions,
       },
     });
   } catch (error) {
@@ -77,107 +65,124 @@ export async function GET(
   }
 }
 
-export async function POST(
+/**
+ * PATCH /api/users/[id]/permissions
+ * Update user's permissions JSON field
+ */
+export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const { userId } = getUserInfoFromHeaders(request.headers);
-
-    // Check if user has permission to assign permissions
-    const hasPermission = await checkUserPermission(userId, PermissionModule.USER, PermissionAction.UPDATE);
-    if (!hasPermission) {
-      return NextResponse.json(
-        { ok: false, error: "Unauthorized: Insufficient permissions" },
-        { status: 403 }
-      );
-    }
-
-    // Verify target user exists
-    const targetUser = await prisma.user.findUnique({
-      where: { id },
-    });
-
-    if (!targetUser) {
-      return NextResponse.json(
-        { ok: false, error: "User not found" },
-        { status: 404 }
-      );
+    
+    // Check authentication and permission to edit user permissions
+    const authResult = await requireAuth(request, ['edit_user']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
 
     const body = await request.json();
-    const validatedData = assignPermissionSchema.parse(body);
+    const validatedData = updatePermissionsSchema.parse(body);
 
-    // Verify all permission IDs exist
-    const permissions = await prisma.permission.findMany({
-      where: {
-        id: { in: validatedData.permissionIds },
-      },
-    });
-
-    if (permissions.length !== validatedData.permissionIds.length) {
+    if (!Object.prototype.hasOwnProperty.call(validatedData, 'permissions')) {
       return NextResponse.json(
-        { ok: false, error: "One or more permission IDs are invalid" },
+        {
+          ok: false,
+          error: 'Permissions field is required',
+        },
         { status: 400 }
       );
     }
 
-    // Get existing user permissions
-    const existingPermissions = await prisma.userPermission.findMany({
-      where: { userId: id },
-      select: { permissionId: true },
+    const existingUser = await prisma.user.findUnique({
+      where: { id },
     });
 
-    const existingPermissionIds = new Set(existingPermissions.map((ep) => ep.permissionId));
-
-    // Find permissions to add (not already assigned)
-    const permissionsToAdd = validatedData.permissionIds.filter(
-      (pid) => !existingPermissionIds.has(pid)
-    );
-
-    // Add new permissions
-    if (permissionsToAdd.length > 0) {
-      await prisma.userPermission.createMany({
-        data: permissionsToAdd.map((permissionId) => ({
-          userId: id,
-          permissionId,
-        })),
-        skipDuplicates: true,
-      });
+    if (!existingUser) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: 'User not found',
+        },
+        { status: 404 }
+      );
     }
 
-    // Get updated user permissions
-    const updatedPermissions = await prisma.userPermission.findMany({
-      where: { userId: id },
-      include: {
-        permission: true,
+    // Validate that all permission keys are valid
+    const permissions = validatedData.permissions || {};
+    const invalidKeys = Object.keys(permissions).filter(
+      key => !ALL_PERMISSION_KEYS.includes(key as any)
+    );
+
+    if (invalidKeys.length > 0) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: 'Invalid permission keys',
+          invalidKeys,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Update user permissions JSON field
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: {
+        permissions: permissions || null,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        permissions: true,
       },
     });
 
     return NextResponse.json({
       ok: true,
-      data: updatedPermissions.map((up) => ({
-        id: up.id,
-        permissionId: up.permission.id,
-        module: up.permission.module,
-        action: up.permission.action,
-        description: up.permission.description,
-      })),
-      message: `Assigned ${permissionsToAdd.length} permission(s)`,
+      data: {
+        userId: updatedUser.id,
+        email: updatedUser.email,
+        name: updatedUser.name,
+        permissions: updatedUser.permissions || {},
+      },
+      message: 'User permissions updated successfully',
     });
   } catch (error) {
+    console.error('Error updating user permissions:', error);
+    
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { ok: false, error: "Validation error", details: error.errors },
+        {
+          ok: false,
+          error: 'Validation error',
+          details: error.issues,
+        },
         { status: 400 }
       );
     }
-    console.error("Error assigning permissions:", error);
+    
     return NextResponse.json(
-      { ok: false, error: "Failed to assign permissions" },
+      {
+        ok: false,
+        error: 'Failed to update user permissions',
+      },
       { status: 500 }
     );
   }
 }
 
+/**
+ * POST /api/users/[id]/permissions
+ * Legacy endpoint - redirects to PATCH for JSON-based permissions
+ * Kept for backward compatibility during migration
+ */
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  // Redirect POST to PATCH for JSON-based permissions
+  return PATCH(request, { params });
+}

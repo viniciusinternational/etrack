@@ -1,16 +1,29 @@
 import { PrismaClient, UserRole } from "@prisma/client";
-import { ALL_PERMISSIONS } from "../lib/permission-constants";
-import { generatePassword, hashPassword } from "../lib/password";
+import { hashPassword } from "../lib/password";
+import { ALL_PERMISSION_KEYS, type UserPermissions } from "../types/permissions";
 
 const prisma = new PrismaClient();
+
+/**
+ * Build permissions JSON object with all permissions enabled
+ * This creates a UserPermissions object where all permission keys are set to true
+ */
+function buildAllPermissionsJSON(): UserPermissions {
+  const permissionsObj: Partial<UserPermissions> = {};
+
+  // Initialize all permission keys to true
+  for (const key of ALL_PERMISSION_KEYS) {
+    permissionsObj[key] = true;
+  }
+
+  return permissionsObj as UserPermissions;
+}
 
 async function main() {
   console.log("Starting seed...");
 
   // Clear existing data (in reverse order of dependencies)
   console.log("Clearing existing data...");
-  // await prisma.userPermission.deleteMany();
-  // await prisma.permission.deleteMany();
   // await prisma.calendarEvent.deleteMany();
   // await prisma.auditLog.deleteMany();
   // await prisma.discrepancyRemark.deleteMany();
@@ -24,8 +37,8 @@ async function main() {
   // await prisma.budgetAllocation.deleteMany();
   // await prisma.milestoneSubmission.deleteMany();
   // await prisma.project.deleteMany();
-  // await prisma.user.deleteMany();
-  // await prisma.mDA.deleteMany(); // Note: Prisma client uses PascalCase for model names
+  await prisma.user.deleteMany();
+  await prisma.mDA.deleteMany(); // Note: Prisma client uses PascalCase for model names
 
   console.log("Deleted existing data.");
 
@@ -142,38 +155,15 @@ async function main() {
 
   console.log(`Created ${createdMdas.length} MDAs`);
 
-  // ========== SECOND PASS: Create All Permissions ==========
-  console.log("Creating permissions...");
-  const createdPermissions = [];
-
-  for (const perm of ALL_PERMISSIONS) {
-    const permission = await prisma.permission.upsert({
-      where: {
-        module_action: {
-          module: perm.module,
-          action: perm.action,
-        },
-      },
-      update: {
-        description: perm.description,
-      },
-      create: {
-        module: perm.module,
-        action: perm.action,
-        description: perm.description,
-      },
-    });
-    createdPermissions.push(permission);
-  }
-
-  console.log(`Created ${createdPermissions.length} permissions`);
-
-  // ========== THIRD PASS: Create SuperAdmin User ==========
+  // ========== SECOND PASS: Create SuperAdmin User with All Permissions ==========
   console.log("Creating SuperAdmin user...");
   
   // Generate password for admin
-  const adminPassword = generatePassword();
+  const adminPassword = 'admin@pass';
   const adminPasswordHash = hashPassword(adminPassword);
+
+  // Build permissions JSON object with all permissions enabled
+  const allPermissionsJSON = buildAllPermissionsJSON();
 
   const adminUser = await prisma.user.create({
     data: {
@@ -183,38 +173,25 @@ async function main() {
       password: adminPasswordHash,
       mustChangePassword: true,
       status: "active",
+      permissions: allPermissionsJSON, // Set JSON permissions (RBAS format)
     },
   });
 
   console.log(`Created admin user: ${adminUser.email}`);
   console.log(`Generated password: ${adminPassword}`);
   console.log("⚠️  IMPORTANT: Save this password securely. User must change it on first login.");
-
-  // ========== FOURTH PASS: Assign All Permissions to Admin ==========
-  console.log("Assigning all permissions to admin user...");
-  
-  const permissionIds = createdPermissions.map((p) => p.id);
-  
-  await prisma.userPermission.createMany({
-    data: permissionIds.map((permissionId) => ({
-      userId: adminUser.id,
-      permissionId,
-    })),
-    skipDuplicates: true,
-  });
-
-  console.log(`Assigned ${permissionIds.length} permissions to admin user`);
+  console.log(`Set ${Object.keys(allPermissionsJSON).length} permissions in JSON field (RBAS format)`);
 
   console.log("\n✅ Seed completed successfully!");
   console.log(`\n📊 Summary:`);
   console.log(`   - MDAs: ${createdMdas.length}`);
-  console.log(`   - Permissions: ${createdPermissions.length}`);
   console.log(`   - Admin User: ${adminUser.email}`);
-  console.log(`   - Admin Permissions: ${permissionIds.length}`);
+  console.log(`   - Admin Permissions: ${Object.keys(allPermissionsJSON).length} (all enabled)`);
   console.log(`\n🔑 Admin Credentials:`);
   console.log(`   Email: ${adminUser.email}`);
   console.log(`   Password: ${adminPassword}`);
   console.log(`   ⚠️  User must change password on first login`);
+  console.log(`\n✅ Admin user has ALL permissions enabled (RBAS JSON format)`);
 }
 
 main()

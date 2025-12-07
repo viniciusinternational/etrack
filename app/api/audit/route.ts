@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/permission-middleware";
-import { PermissionModule, PermissionAction } from "@/lib/permission-constants";
+import { requireAuth } from "@/lib/api-permissions";
+import { AuditActionType, AuditStatus } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
   try {
-    const permissionCheck = await requirePermission(req, PermissionModule.AUDIT, PermissionAction.READ);
-    if (!permissionCheck.authorized) return permissionCheck.error!;
+    // Check authentication and permission
+    const authResult = await requireAuth(req, ['view_audit']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
     const { searchParams } = new URL(req.url);
     const entity = searchParams.get("entity");
     const actor = searchParams.get("actor");
@@ -38,13 +41,46 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { actor, entity, entityId, actionType, status, before, after, description } = body;
 
+    // Convert actionType to enum if it's a string
+    let actionTypeEnum: AuditActionType;
+    if (typeof actionType === "string") {
+      const actionMap: Record<string, AuditActionType> = {
+        CREATE: AuditActionType.CREATE,
+        UPDATE: AuditActionType.UPDATE,
+        DELETE: AuditActionType.DELETE,
+        VIEW: AuditActionType.VIEW,
+        EXPORT: AuditActionType.EXPORT,
+        LOGIN: AuditActionType.LOGIN,
+        LOGOUT: AuditActionType.LOGOUT,
+      };
+      actionTypeEnum = actionMap[actionType.toUpperCase()] || AuditActionType.VIEW;
+    } else {
+      actionTypeEnum = actionType;
+    }
+
+    // Convert status to enum if it's a string, handling common mistakes
+    let statusEnum: AuditStatus;
+    if (typeof status === "string") {
+      const statusUpper = status.toUpperCase();
+      // Map "FAILURE" to "FAILED" for backward compatibility
+      const statusMap: Record<string, AuditStatus> = {
+        SUCCESS: AuditStatus.SUCCESS,
+        FAILED: AuditStatus.FAILED,
+        FAILURE: AuditStatus.FAILED, // Handle common mistake
+        PENDING: AuditStatus.PENDING,
+      };
+      statusEnum = statusMap[statusUpper] || AuditStatus.SUCCESS;
+    } else {
+      statusEnum = status;
+    }
+
     const log = await prisma.auditLog.create({
       data: {
         actor,
         entity,
         entityId,
-        actionType,
-        status,
+        actionType: actionTypeEnum,
+        status: statusEnum,
         before: before || null,
         after: after || null,
         description,

@@ -120,6 +120,51 @@ export function useAssignUserPermissions() {
   });
 }
 
+// JSON-based permissions hooks (RBAS)
+export interface UserPermissionsJSONResponse {
+  userId: string;
+  email: string;
+  name: string;
+  permissions: Record<string, boolean>;
+}
+
+export function useUserPermissionsJSON(userId: string) {
+  return useQuery({
+    queryKey: ["users", userId, "permissions-json"],
+    queryFn: async () => {
+      const { data } = await axios.get<ApiResponse<UserPermissionsJSONResponse>>(
+        `${API_URL}/${userId}/permissions`
+      );
+      return data.data;
+    },
+    enabled: !!userId,
+  });
+}
+
+export function useUpdateUserPermissionsJSON() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      permissions,
+    }: {
+      userId: string;
+      permissions: Record<string, boolean>;
+    }) => {
+      const { data } = await axios.patch<ApiResponse<UserPermissionsJSONResponse>>(
+        `${API_URL}/${userId}/permissions`,
+        { permissions }
+      );
+      return data.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["users", variables.userId, "permissions-json"] });
+      queryClient.invalidateQueries({ queryKey: ["users", variables.userId, "permissions"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+}
+
 export function useRemoveUserPermission() {
   const queryClient = useQueryClient();
   return useMutation({

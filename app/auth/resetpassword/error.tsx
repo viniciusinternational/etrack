@@ -1,12 +1,22 @@
 "use client";
 
+import { useEffect } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import Link from "next/link";
 import { AlertCircle } from "lucide-react";
 
-export default function LoginNotFound() {
+export default function ResetPasswordError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error("Reset password page error:", error);
+  }, [error]);
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8 md:py-12 relative">
       {/* Banner Background */}
@@ -46,21 +56,27 @@ export default function LoginNotFound() {
           <CardContent className="px-6 md:px-8 pb-8">
             <div className="space-y-6 text-center">
               <div className="flex justify-center">
-                <AlertCircle className="h-12 w-12 text-muted-foreground" />
+                <AlertCircle className="h-12 w-12 text-destructive" />
               </div>
               <div className="space-y-2">
                 <h2 className="text-xl font-bold text-foreground">
-                  Page Not Found
+                  Something went wrong
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  The login page you're looking for doesn't exist
+                  An error occurred while loading the reset password page
                 </p>
               </div>
-              <Link href="/login">
-                <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium h-11 shadow-sm transition-all">
-                  Go to Login
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md text-left">
+                  {error.message || "An unexpected error occurred"}
+                </p>
+                <Button
+                  onClick={reset}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium h-11 shadow-sm transition-all"
+                >
+                  Try again
                 </Button>
-              </Link>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -68,3 +84,4 @@ export default function LoginNotFound() {
     </div>
   );
 }
+

@@ -2,23 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Users,
-  Building2,
-  FolderOpen,
-  CheckSquare,
-  DollarSign,
-  ShoppingCart,
-  Calendar,
-  Shield,
-  FileSpreadsheet,
-  BarChart3,
-  Upload,
-  Award,
-  Settings,
-  Home,
-} from "lucide-react";
+import { useMemo } from "react";
+import { BarChart3, Settings, Home } from "lucide-react";
+import { useAuthStore } from "@/store/auth-store";
+import { getNavigationForPermissions } from "@/lib/navigation";
 
 import {
   Sidebar,
@@ -36,31 +23,12 @@ import {
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { user } = useAuthStore();
 
-  const navItems = [
-    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { label: "Events", href: "/events", icon: Calendar },
-    { label: "Users", href: "/users", icon: Users },
-    { label: "MDAs", href: "/mdas", icon: Building2 },
-    { label: "Projects", href: "/projects", icon: FolderOpen },
-    {
-      label: "Submissions",
-      href: "/submissions",
-      icon: CheckSquare,
-    },
-    { label: "Budget", href: "/budget", icon: Upload },
-
-    { label: "Expenditure", href: "/expenditure", icon: DollarSign },
-    { label: "Revenue", href: "/revenue", icon: DollarSign },
-    { label: "Tenders", href: "/tenders", icon: ShoppingCart },
-    { label: "Awards", href: "/awards", icon: Award },
-    { label: "Contract", href: "/contract", icon: Award },
-    { label: "Meetings", href: "/meetings", icon: Calendar },
-    { label: "Audit", href: "/audit", icon: Shield },
-    { label: "Reports", href: "/reports", icon: FileSpreadsheet },
-  ];
-
-  const isActive = (href: string) => pathname.startsWith(href);
+  // Get filtered navigation items based on user permissions
+  const navItems = useMemo(() => {
+    return getNavigationForPermissions(user);
+  }, [user]);
 
   const getBadgeCount = (href: string) => {
     if (href.includes("submissions")) return 8;
@@ -99,11 +67,11 @@ export function AppSidebar() {
             <SidebarMenu className="space-y-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const active = isActive(item.href);
+                const active = pathname.startsWith(item.href);
                 const badgeCount = getBadgeCount(item.href);
 
                 return (
-                  <SidebarMenuItem key={item.label}>
+                  <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
                       asChild
                       isActive={active}

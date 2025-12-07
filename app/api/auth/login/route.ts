@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { verifyPassword } from "@/lib/password";
 import { createAuditLog } from "@/lib/audit-logger";
+import { AuditStatus } from "@prisma/client";
 import { randomBytes } from "crypto";
 
 const loginSchema = z.object({
@@ -34,6 +35,7 @@ export async function POST(request: NextRequest) {
         status: true,
         password: true,
         mustChangePassword: true,
+        permissions: true, // RBAS: Include permissions JSON
       },
     });
 
@@ -74,7 +76,7 @@ export async function POST(request: NextRequest) {
           entityType: "User",
           entityId: user.id,
           description: `Failed login attempt for ${user.email}`,
-          status: "FAILURE" as any,
+          status: AuditStatus.FAILED,
           ipAddress: ip,
           userAgent: headersList.get("user-agent") ?? undefined,
         });
@@ -125,6 +127,7 @@ export async function POST(request: NextRequest) {
       role: user.role,
       mdaId: user.mdaId,
       mustChangePassword: user.mustChangePassword,
+      permissions: user.permissions || null, // RBAS: Include permissions JSON
     };
 
     return NextResponse.json({

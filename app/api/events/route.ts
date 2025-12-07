@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { createAuditLog, getUserInfoFromHeaders } from "@/lib/audit-logger";
 import { EventStatus, EventPriority } from "@prisma/client";
+import { requireAuth } from "@/lib/api-permissions";
 
 const createEventSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -19,6 +20,11 @@ const createEventSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
+    // Check authentication and permission
+    const authResult = await requireAuth(request, ['view_event']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
     const { searchParams } = new URL(request.url);
     const date = searchParams.get("date");
 
@@ -52,6 +58,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication and permission
+    const authResult = await requireAuth(request, ['create_event']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
     const body = await request.json();
     const validatedData = createEventSchema.parse(body);
 

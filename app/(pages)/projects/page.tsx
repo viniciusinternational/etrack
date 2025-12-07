@@ -1,8 +1,11 @@
 "use client";
 import { ProjectListView } from "@/components/global/project-list-view";
 import { useProjects, useDeleteProject } from "@/hooks/use-projects";
+import { useAuthGuard } from "@/hooks/use-auth-guard";
 
 export default function ProjectsPage() {
+  // Check authentication and permission
+  const { isChecking } = useAuthGuard(['view_project']);
   const { data: projects, isLoading } = useProjects();
   const { mutate: deleteProject } = useDeleteProject();
 
@@ -10,7 +13,9 @@ export default function ProjectsPage() {
     deleteProject(projectId);
   };
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isChecking || isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">

@@ -4,8 +4,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { createAuditLog, getUserInfoFromHeaders } from "@/lib/audit-logger";
 import { ProjectCategory, ProjectStatus } from "@prisma/client";
-import { requirePermission } from "@/lib/permission-middleware";
-import { PermissionModule, PermissionAction } from "@/lib/permission-constants";
+import { requireAuth } from "@/lib/api-permissions";
 
 // Reusing Project schema as Contract seems to be a view of Project
 const createContractSchema = z.object({
@@ -23,8 +22,11 @@ const createContractSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const permissionCheck = await requirePermission(request, PermissionModule.CONTRACT, PermissionAction.READ);
-    if (!permissionCheck.authorized) return permissionCheck.error!;
+    // Check authentication and permission
+    const authResult = await requireAuth(request, ['view_contract']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
     const { searchParams } = new URL(request.url);
     const contractorId = searchParams.get("contractorId");
 
@@ -67,8 +69,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const permissionCheck = await requirePermission(request, PermissionModule.CONTRACT, PermissionAction.CREATE);
-    if (!permissionCheck.authorized) return permissionCheck.error!;
+    // Check authentication and permission
+    const authResult = await requireAuth(request, ['create_contract']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
 
     const body = await request.json();
     const validatedData = createContractSchema.parse(body);

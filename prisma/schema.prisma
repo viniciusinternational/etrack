@@ -104,17 +104,18 @@ enum EventPriority {
 // =====================================================
 
 model User {
-  id       String   @id @default(cuid())
-  email    String   @unique
-  name     String
-  role     UserRole
-  mdaId    String?
-  mda      MDA?     @relation(fields: [mdaId], references: [id])
-  password String? // Added for auth
-  status   String   @default("active") // Replaces isActive, matches TypeScript type
-  lastLogin DateTime?
-  mustChangePassword Boolean @default(false)
-  passwordChangedAt DateTime?
+  id                 String    @id @default(cuid())
+  email              String    @unique
+  name               String
+  role               UserRole
+  mdaId              String?
+  mda                MDA?      @relation(fields: [mdaId], references: [id])
+  password           String? // Added for auth
+  status             String    @default("active") // Replaces isActive, matches TypeScript type
+  lastLogin          DateTime?
+  mustChangePassword Boolean   @default(false)
+  passwordChangedAt  DateTime?
+  permissions        Json? // RBAS: JSON field storing permissions in action_module format
 
   // Relations
   contractorProjects Project[] @relation("Contractor")
@@ -130,7 +131,7 @@ model User {
   createdPayments   Payment[] @relation("CreatedPayments")
   submittedPayments Payment[] @relation("SubmittedPayments")
 
-  permissions UserPermission[]
+  userPermissions UserPermission[] @relation("UserPermissions") // Legacy relation - kept for migration
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -170,11 +171,11 @@ model Project {
   contractorId String?
   contractor   User?   @relation("Contractor", fields: [contractorId], references: [id])
 
-  contractValue Float
-  startDate     DateTime
-  endDate       DateTime
-  status        ProjectStatus
-  evidenceDocs  String[] // Array of URLs
+  contractValue     Float
+  startDate         DateTime
+  endDate           DateTime
+  status            ProjectStatus
+  evidenceDocs      String[] // Array of URLs
   plannedMilestones Json? // Array of milestone templates
 
   // Relations
@@ -361,8 +362,6 @@ model CalendarEvent {
   updatedAt DateTime @updatedAt
 }
 
-
-
 // =====================================================
 // PAYMENTS
 // =====================================================
@@ -393,100 +392,100 @@ enum PaymentMethod {
 }
 
 model Payment {
-  id                   String            @id @default(cuid())
-  sourceType           PaymentSourceType
-  projectId            String?
-  requestFormId        String?
-  payrollId            String?
-  
-  createdById          String
-  createdBy            User              @relation("CreatedPayments", fields: [createdById], references: [id])
-  submittedById        String?
-  submittedBy          User?             @relation("SubmittedPayments", fields: [submittedById], references: [id])
-  approverIds          String[]          // Array of User IDs
-  
-  payeeId              String?
-  payerAccountId       String?
-  
-  currency             String
-  exchangeRate         Float?
-  isForeignCurrency    Boolean           @default(false)
-  
-  amount               Float
-  taxAmount            Float             @default(0)
-  totalAmount          Float
-  fxAppliedAmount      Float?
-  balanceOutstanding   Float             @default(0)
-  
-  status               PaymentStatus     @default(draft)
-  method               PaymentMethod     @default(bank_transfer)
-  
-  paymentDate          String?           // ISO Date string
-  dueDate              String?           // ISO Date string
-  scheduledFor         String?           // ISO Date string
-  
-  notes                String?
-  reference            String?
-  tags                 String[]
-  
-  requiresApproval     Boolean           @default(false)
-  isDraft              Boolean           @default(true)
-  isLocked             Boolean           @default(false)
-  isArchived           Boolean           @default(false)
-  isRecurring          Boolean           @default(false)
+  id            String            @id @default(cuid())
+  sourceType    PaymentSourceType
+  projectId     String?
+  requestFormId String?
+  payrollId     String?
+
+  createdById   String
+  createdBy     User     @relation("CreatedPayments", fields: [createdById], references: [id])
+  submittedById String?
+  submittedBy   User?    @relation("SubmittedPayments", fields: [submittedById], references: [id])
+  approverIds   String[] // Array of User IDs
+
+  payeeId        String?
+  payerAccountId String?
+
+  currency          String
+  exchangeRate      Float?
+  isForeignCurrency Boolean @default(false)
+
+  amount             Float
+  taxAmount          Float  @default(0)
+  totalAmount        Float
+  fxAppliedAmount    Float?
+  balanceOutstanding Float  @default(0)
+
+  status PaymentStatus @default(draft)
+  method PaymentMethod @default(bank_transfer)
+
+  paymentDate  String? // ISO Date string
+  dueDate      String? // ISO Date string
+  scheduledFor String? // ISO Date string
+
+  notes     String?
+  reference String?
+  tags      String[]
+
+  requiresApproval     Boolean @default(false)
+  isDraft              Boolean @default(true)
+  isLocked             Boolean @default(false)
+  isArchived           Boolean @default(false)
+  isRecurring          Boolean @default(false)
   recurrenceTemplateId String?
-  
-  derivedFromRequestFormItems Boolean    @default(false)
-  requestFormItemIds   String[]
-  
+
+  derivedFromRequestFormItems Boolean  @default(false)
+  requestFormItemIds          String[]
+
   attachments          String[]
   auditLog             Json?
   reconciliationStatus String?
   reconciliationDate   DateTime?
   ledgerEntryIds       String[]
   cancellationReason   String?
-  
-  items                PaymentItem[]
-  installments         PaymentInstallment[]
 
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
+  items        PaymentItem[]
+  installments PaymentInstallment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model PaymentItem {
-  id                String   @id @default(cuid())
-  paymentId         String
-  payment           Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  
-  description       String
-  quantity          Float    @default(1)
-  unitPrice         Float
-  currency          String
-  taxRate           Float    @default(0)
-  taxAmount         Float    @default(0)
-  total             Float
-  
+  id        String  @id @default(cuid())
+  paymentId String
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  description String
+  quantity    Float  @default(1)
+  unitPrice   Float
+  currency    String
+  taxRate     Float  @default(0)
+  taxAmount   Float  @default(0)
+  total       Float
+
   requestFormItemId String?
   metadata          Json?
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model PaymentInstallment {
-  id          String        @id @default(cuid())
-  paymentId   String
-  payment     Payment       @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  
-  dueDate     String        // ISO Date string
-  amount      Float
-  status      PaymentStatus @default(pending_approval)
-  paidAt      DateTime?
-  reference   String?
-  notes       String?
-  
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id        String  @id @default(cuid())
+  paymentId String
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  dueDate   String // ISO Date string
+  amount    Float
+  status    PaymentStatus @default(pending_approval)
+  paidAt    DateTime?
+  reference String?
+  notes     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // =====================================================
@@ -511,17 +510,17 @@ enum AuditStatus {
 
 model AuditLog {
   id          String          @id @default(cuid())
-  actor       String          // User ID or name who performed the action
-  entity      String          // Entity type (e.g., "Project", "User", "Budget")
-  entityId    String?         // ID of the affected entity
+  actor       String // User ID or name who performed the action
+  entity      String // Entity type (e.g., "Project", "User", "Budget")
+  entityId    String? // ID of the affected entity
   actionType  AuditActionType
   status      AuditStatus
-  before      Json?           // Complete data before change
-  after       Json?           // Complete data after change
-  description String          // Human-readable description
+  before      Json? // Complete data before change
+  after       Json? // Complete data after change
+  description String // Human-readable description
   timestamp   DateTime        @default(now())
-  ipAddress   String?         // Optional: Track IP address
-  userAgent   String?         // Optional: Track user agent
+  ipAddress   String? // Optional: Track IP address
+  userAgent   String? // Optional: Track user agent
 
   @@index([actor])
   @@index([entity])
@@ -534,9 +533,9 @@ model AuditLog {
 // =====================================================
 
 model Permission {
-  id          String   @id @default(cuid())
-  module      String   // e.g., "USER", "PROJECT", "BUDGET"
-  action      String   // e.g., "CREATE", "READ", "UPDATE", "DELETE"
+  id          String  @id @default(cuid())
+  module      String // e.g., "USER", "PROJECT", "BUDGET"
+  action      String // e.g., "CREATE", "READ", "UPDATE", "DELETE"
   description String?
 
   // Relations
@@ -553,7 +552,7 @@ model Permission {
 model UserPermission {
   id           String     @id @default(cuid())
   userId       String
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User       @relation("UserPermissions", fields: [userId], references: [id], onDelete: Cascade)
   permissionId String
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
@@ -564,4 +563,3 @@ model UserPermission {
   @@index([userId])
   @@index([permissionId])
 }
-

@@ -26,7 +26,7 @@ export function AppLayout({ children, user, className }: AppLayoutProps) {
   const handleLogout = () => {
     logout();
     toast.success("Logged out successfully");
-    router.push("/login");
+    router.push("/auth/login");
   };
 
   return (

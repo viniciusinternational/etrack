@@ -26,8 +26,11 @@ import { Button } from "@/components/ui/button";
 import { MilestoneSubmission, SubmissionStatus } from "@/types";
 
 import { useSubmissions } from "@/hooks/use-submissions";
+import { useAuthGuard } from "@/hooks/use-auth-guard";
 
 export default function SubmissionsListPage() {
+  // Check authentication and permission
+  const { isChecking } = useAuthGuard(['view_submission']);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const { data: submissionsData } = useSubmissions();
   const submissions = useMemo(() => submissionsData || [], [submissionsData]);

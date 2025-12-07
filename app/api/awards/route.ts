@@ -3,8 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { createAuditLog, getUserInfoFromHeaders } from "@/lib/audit-logger";
-import { requirePermission } from "@/lib/permission-middleware";
-import { PermissionModule, PermissionAction } from "@/lib/permission-constants";
+import { requireAuth } from "@/lib/api-permissions";
 
 const createAwardSchema = z.object({
   procurementRequestId: z.string().min(1, "Procurement Request ID is required"),
@@ -15,8 +14,11 @@ const createAwardSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const permissionCheck = await requirePermission(request, PermissionModule.AWARD, PermissionAction.READ);
-    if (!permissionCheck.authorized) return permissionCheck.error!;
+    // Check authentication and permission
+    const authResult = await requireAuth(request, ['view_award']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
     const { searchParams } = new URL(request.url);
     const vendorId = searchParams.get("vendorId");
 
@@ -59,8 +61,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const permissionCheck = await requirePermission(request, PermissionModule.AWARD, PermissionAction.CREATE);
-    if (!permissionCheck.authorized) return permissionCheck.error!;
+    // Check authentication and permission
+    const authResult = await requireAuth(request, ['create_award']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
 
     const body = await request.json();
     const validatedData = createAwardSchema.parse(body);

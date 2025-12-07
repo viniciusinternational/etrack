@@ -4,8 +4,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { createAuditLog, getUserInfoFromHeaders } from "@/lib/audit-logger";
 import { ProjectCategory, ProjectStatus } from "@prisma/client";
-import { requirePermission } from "@/lib/permission-middleware";
-import { PermissionModule, PermissionAction } from "@/lib/permission-constants";
+import { requireAuth } from "@/lib/api-permissions";
 
 const createProjectSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -28,10 +27,10 @@ const createProjectSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    // Check permission
-    const permissionCheck = await requirePermission(request, PermissionModule.PROJECT, PermissionAction.READ);
-    if (!permissionCheck.authorized) {
-      return permissionCheck.error!;
+    // Check authentication and permission
+    const authResult = await requireAuth(request, ['view_project']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
@@ -40,8 +39,28 @@ export async function GET(request: NextRequest) {
     const contractorId = searchParams.get("contractorId");
 
     const where: Prisma.ProjectWhereInput = {};
-    if (status) where.status = status as unknown as ProjectStatus;
-    if (category) where.category = category as unknown as ProjectCategory;
+    if (status) {
+      // Validate status is a valid ProjectStatus enum value
+      if (Object.values(ProjectStatus).includes(status as ProjectStatus)) {
+        where.status = status as ProjectStatus;
+      } else {
+        return NextResponse.json(
+          { ok: false, error: `Invalid status: ${status}. Valid values: ${Object.values(ProjectStatus).join(", ")}` },
+          { status: 400 }
+        );
+      }
+    }
+    if (category) {
+      // Validate category is a valid ProjectCategory enum value
+      if (Object.values(ProjectCategory).includes(category as ProjectCategory)) {
+        where.category = category as ProjectCategory;
+      } else {
+        return NextResponse.json(
+          { ok: false, error: `Invalid category: ${category}. Valid values: ${Object.values(ProjectCategory).join(", ")}` },
+          { status: 400 }
+        );
+      }
+    }
     if (mdaId) where.supervisingMdaId = mdaId;
     if (contractorId) where.contractorId = contractorId;
 
@@ -90,10 +109,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Check permission
-    const permissionCheck = await requirePermission(request, PermissionModule.PROJECT, PermissionAction.CREATE);
-    if (!permissionCheck.authorized) {
-      return permissionCheck.error!;
+    // Check authentication and permission
+    const authResult = await requireAuth(request, ['create_project']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
 
     const body = await request.json();

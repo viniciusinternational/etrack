@@ -82,7 +82,7 @@ export default function LoginPage() {
 
         // Redirect based on mustChangePassword flag
         if (user.mustChangePassword) {
-          router.push("/dashboard?changePassword=true");
+          router.push("/auth/resetpassword");
         } else {
           router.push("/dashboard");
         }
@@ -272,3 +272,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

@@ -4,8 +4,7 @@ import { z } from "zod";
 import { createAuditLog, getUserInfoFromHeaders } from "@/lib/audit-logger";
 import { UserRole } from "@prisma/client";
 import { hashPassword, generatePassword } from "@/lib/password";
-import { checkUserPermission } from "@/lib/permissions";
-import { PermissionModule, PermissionAction } from "@/lib/permission-constants";
+import { requireAuth } from "@/lib/api-permissions";
 
 const createUserSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -21,8 +20,13 @@ const createUserSchema = z.object({
   generatePassword: z.boolean().optional().default(false),
 });
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Check authentication and permission
+    const authResult = await requireAuth(request, ['view_user']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
     const users = await prisma.user.findMany({
       orderBy: { createdAt: "desc" },
       select: {
@@ -60,15 +64,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = getUserInfoFromHeaders(request.headers);
-    
-    // Check if user has permission to create users
-    const hasPermission = await checkUserPermission(userId, PermissionModule.USER, PermissionAction.CREATE);
-    if (!hasPermission) {
-      return NextResponse.json(
-        { ok: false, error: "Unauthorized: Insufficient permissions" },
-        { status: 403 }
-      );
+    // Check authentication and permission
+    const authResult = await requireAuth(request, ['create_user']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
 
     const body = await request.json();

@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Group permissions by module
-    const grouped = permissions.reduce((acc, perm) => {
+    const grouped = permissions.reduce((acc: Record<string, typeof permissions>, perm) => {
       if (!acc[perm.module]) {
         acc[perm.module] = [];
       }
@@ -50,7 +50,13 @@ export async function POST(request: NextRequest) {
   try {
     const { userId } = getUserInfoFromHeaders(request.headers);
     
-    // Check if user has permission to create permissions
+    // Check authentication and permission
+    if (!userId) {
+      return NextResponse.json(
+        { ok: false, error: "Unauthorized: User not authenticated" },
+        { status: 401 }
+      );
+    }
     const hasPermission = await checkUserPermission(userId, PermissionModule.USER, PermissionAction.CREATE);
     if (!hasPermission) {
       return NextResponse.json(
@@ -91,7 +97,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { ok: false, error: "Validation error", details: error.errors },
+        { ok: false, error: "Validation error", details: error.issues },
         { status: 400 }
       );
     }

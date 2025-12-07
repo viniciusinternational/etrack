@@ -31,6 +31,7 @@ export interface User {
   mdaName?: string;
   status: "active" | "inactive";
   lastLogin?: Date;
+  permissions?: import('./permissions').UserPermissions; // RBAS: JSON permissions in action_module format
   createdAt: Date;
   updatedAt: Date;
 }

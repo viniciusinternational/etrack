@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { createAuditLog, getUserInfoFromHeaders } from "@/lib/audit-logger";
+import { requireAuth } from "@/lib/api-permissions";
 
 const createMdaSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -17,6 +18,11 @@ const createMdaSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
+    // Check authentication and permission
+    const authResult = await requireAuth(request, ['view_mda']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category");
 
@@ -45,6 +51,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication and permission
+    const authResult = await requireAuth(request, ['create_mda']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
     const body = await request.json();
     const validatedData = createMdaSchema.parse(body);
 

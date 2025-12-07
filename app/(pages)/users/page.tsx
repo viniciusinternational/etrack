@@ -40,10 +40,13 @@ import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, useUserPermissio
 import { useMDAs } from "@/hooks/use-mdas";
 import { PermissionSelector } from "@/components/admin/permission-selector";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useAuthGuard } from "@/hooks/use-auth-guard";
 
 // Mock Data removed
 
 export default function UserManagementPage() {
+  // Check authentication and permission
+  const { isChecking } = useAuthGuard(['view_user']);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const { data: usersData } = useUsers();
   const { data: mdasData } = useMDAs();

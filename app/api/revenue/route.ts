@@ -3,8 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { createAuditLog, getUserInfoFromHeaders } from "@/lib/audit-logger";
-import { requirePermission } from "@/lib/permission-middleware";
-import { PermissionModule, PermissionAction } from "@/lib/permission-constants";
+import { requireAuth } from "@/lib/api-permissions";
 
 const createRevenueSchema = z.object({
   mdaId: z.string().min(1, "MDA ID is required"),
@@ -16,8 +15,11 @@ const createRevenueSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const permissionCheck = await requirePermission(request, PermissionModule.REVENUE, PermissionAction.READ);
-    if (!permissionCheck.authorized) return permissionCheck.error!;
+    // Check authentication and permission
+    const authResult = await requireAuth(request, ['view_revenue']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
     const { searchParams } = new URL(request.url);
     const mdaId = searchParams.get("mdaId");
 
@@ -42,8 +44,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const permissionCheck = await requirePermission(request, PermissionModule.REVENUE, PermissionAction.CREATE);
-    if (!permissionCheck.authorized) return permissionCheck.error!;
+    // Check authentication and permission
+    const authResult = await requireAuth(request, ['create_revenue']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
 
     const body = await request.json();
     const validatedData = createRevenueSchema.parse(body);

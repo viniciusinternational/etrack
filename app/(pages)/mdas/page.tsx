@@ -41,7 +41,11 @@ type MDAFormData = Omit<MDA, "id" | "createdAt" | "updatedAt">;
 
 const CATEGORY_OPTIONS = ["Ministry", "Department", "Agency", "Board"];
 
+import { useAuthGuard } from "@/hooks/use-auth-guard";
+
 export default function MDAManagementPage() {
+  // Check authentication and permission
+  const { isChecking } = useAuthGuard(['view_mda']);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);

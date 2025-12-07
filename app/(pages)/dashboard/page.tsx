@@ -7,6 +7,7 @@
 
 import { Suspense } from "react";
 import { useDashboard } from "@/hooks/use-dashboard";
+import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { Loader2, Users, Building2, Activity, Settings, Shield, ArrowRight } from "lucide-react";
 import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
 import { Button } from "@/components/ui/button";
@@ -18,9 +19,11 @@ import { DashboardUserDistribution } from "@/components/dashboard/DashboardUserD
 import { DashboardRecentUsers } from "@/components/dashboard/DashboardRecentUsers";
 
 export default function AdminDashboardPage() {
+  // Check authentication and permission
+  const { isChecking } = useAuthGuard(['view_dashboard']);
   const { data: stats, isLoading } = useDashboard();
 
-  if (isLoading) {
+  if (isChecking || isLoading) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

@@ -15,7 +15,7 @@ export function AutoLogout() {
 
   useEffect(() => {
     // Skip on login page
-    if (pathname === "/login" || !isAuthenticated) {
+    if (pathname === "/auth/login" || !isAuthenticated) {
       return;
     }
 
@@ -31,7 +31,7 @@ export function AutoLogout() {
       if (timeRemaining <= 0) {
         toast.error("Your session has expired. Please login again.");
         autoLogout();
-        router.push("/login");
+        router.push("/auth/login");
         return;
       }
 

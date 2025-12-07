@@ -1,9 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
+import { requireAuth } from "@/lib/api-permissions";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Check authentication and permission
+    const authResult = await requireAuth(request, ['view_dashboard']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
     const [
       totalUsers,
       activeUsers,

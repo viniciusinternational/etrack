@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { UserRole } from '@/types';
+import type { UserPermissions } from '@/types/permissions';
 
 interface UserState {
   id: string;
@@ -10,6 +11,7 @@ interface UserState {
   mdaId?: string;
   departmentId?: string;
   mustChangePassword?: boolean;
+  permissions?: UserPermissions; // RBAS: JSON permissions
 }
 
 interface AuthStore {
@@ -17,12 +19,14 @@ interface AuthStore {
   token: string | null;
   sessionExpiry: number | null; // Timestamp in milliseconds
   isAuthenticated: boolean;
+  hasHydrated: boolean;
   login: (user: UserState) => void;
   loginWithToken: (user: UserState, token: string) => void;
   logout: () => void;
   autoLogout: () => void;
   updateUser: (updates: Partial<UserState>) => void;
   checkSession: () => boolean;
+  setHasHydrated: (hydrated: boolean) => void;
 }
 
 // Session duration: 24 hours in milliseconds
@@ -35,13 +39,14 @@ export const useAuthStore = create<AuthStore>()(
       token: null,
       sessionExpiry: null,
       isAuthenticated: false,
+      hasHydrated: false,
       login: (user) => {
         // Legacy login method - generates a token
         // Use a simple random string generator for token
         const token = Array.from(crypto.getRandomValues(new Uint8Array(32)))
           .map(b => b.toString(16).padStart(2, '0'))
           .join('');
-        const expiry = Date.now() + SESSION_DURATION;
+      const expiry = Date.now() + SESSION_DURATION;
         set({ user, token, sessionExpiry: expiry, isAuthenticated: true });
       },
       loginWithToken: (user, token) => {
@@ -85,10 +90,17 @@ export const useAuthStore = create<AuthStore>()(
         }
         return true;
       },
+      setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
     }),
     {
       name: 'auth-storage',
-      // Initialize session check on hydration
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        token: state.token,
+        sessionExpiry: state.sessionExpiry,
+      }),
       onRehydrateStorage: () => (state) => {
         if (state) {
           // Check session validity on rehydration
@@ -96,6 +108,8 @@ export const useAuthStore = create<AuthStore>()(
             // Session expired, clear state
             state.logout();
           }
+          // Mark as hydrated after rehydration
+          state.setHasHydrated(true);
         }
       },
     }

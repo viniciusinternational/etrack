@@ -23,8 +23,28 @@ export async function GET(request: NextRequest) {
 
     // Build where clause (same as GET /api/projects)
     const where: Prisma.ProjectWhereInput = {};
-    if (status) where.status = status as unknown as ProjectStatus;
-    if (category) where.category = category as unknown as ProjectCategory;
+    if (status) {
+      // Validate status is a valid ProjectStatus enum value
+      if (Object.values(ProjectStatus).includes(status as ProjectStatus)) {
+        where.status = status as ProjectStatus;
+      } else {
+        return NextResponse.json(
+          { ok: false, error: `Invalid status: ${status}. Valid values: ${Object.values(ProjectStatus).join(", ")}` },
+          { status: 400 }
+        );
+      }
+    }
+    if (category) {
+      // Validate category is a valid ProjectCategory enum value
+      if (Object.values(ProjectCategory).includes(category as ProjectCategory)) {
+        where.category = category as ProjectCategory;
+      } else {
+        return NextResponse.json(
+          { ok: false, error: `Invalid category: ${category}. Valid values: ${Object.values(ProjectCategory).join(", ")}` },
+          { status: 400 }
+        );
+      }
+    }
     if (mdaId) where.supervisingMdaId = mdaId;
     if (contractorId) where.contractorId = contractorId;
 

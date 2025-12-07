@@ -50,13 +50,33 @@ export async function createAuditLog(data: {
       actionTypeEnum = data.actionType;
     }
 
+    // Convert status to enum if it's a string, handling common mistakes
+    let statusEnum: AuditStatus;
+    if (data.status) {
+      if (typeof data.status === "string") {
+        const statusUpper = data.status.toUpperCase();
+        // Map "FAILURE" to "FAILED" for backward compatibility
+        const statusMap: Record<string, AuditStatus> = {
+          SUCCESS: AuditStatus.SUCCESS,
+          FAILED: AuditStatus.FAILED,
+          FAILURE: AuditStatus.FAILED, // Handle common mistake
+          PENDING: AuditStatus.PENDING,
+        };
+        statusEnum = statusMap[statusUpper] || AuditStatus.SUCCESS;
+      } else {
+        statusEnum = data.status;
+      }
+    } else {
+      statusEnum = AuditStatus.SUCCESS;
+    }
+
     await prisma.auditLog.create({
       data: {
         actor,
         entity: data.entityType,
         entityId: data.entityId ?? null,
         actionType: actionTypeEnum,
-        status: data.status || AuditStatus.SUCCESS,
+        status: statusEnum,
         before: data.previousData ? JSON.parse(JSON.stringify(data.previousData)) : null,
         after: data.newData ? JSON.parse(JSON.stringify(data.newData)) : null,
         description: data.description,

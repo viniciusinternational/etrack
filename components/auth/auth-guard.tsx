@@ -8,7 +8,7 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const { isAuthenticated, isChecking } = useAuthGuard();
+  const { isChecking } = useAuthGuard();
 
   if (isChecking) {
     return (
@@ -23,9 +23,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
-  if (!isAuthenticated) {
-    return null; // Redirect will be handled by useAuthGuard
-  }
+  // Redirect will be handled by useAuthGuard hook
 
   return <>{children}</>;
 }

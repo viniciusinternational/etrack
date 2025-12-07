@@ -1,10 +1,22 @@
 "use client";
 
+import { useEffect } from "react";
 import Image from "next/image";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { AlertCircle } from "lucide-react";
 
-export default function LoginLoading() {
+export default function LoginError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error("Login page error:", error);
+  }, [error]);
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8 md:py-12 relative">
       {/* Banner Background */}
@@ -42,34 +54,34 @@ export default function LoginLoading() {
           </div>
 
           <CardContent className="px-6 md:px-8 pb-8">
-            <div className="space-y-6">
-              <div className="text-center space-y-2">
-                <Skeleton className="h-8 w-32 mx-auto" />
-                <Skeleton className="h-4 w-64 mx-auto" />
+            <div className="space-y-6 text-center">
+              <div className="flex justify-center">
+                <AlertCircle className="h-12 w-12 text-destructive" />
               </div>
-
-              <div className="space-y-5">
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-11 w-full" />
-                </div>
-
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-11 w-full" />
-                </div>
-
-                <Skeleton className="h-11 w-full" />
+              <div className="space-y-2">
+                <h2 className="text-xl font-bold text-foreground">
+                  Something went wrong
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  An error occurred while loading the login page
+                </p>
+              </div>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md text-left">
+                  {error.message || "An unexpected error occurred"}
+                </p>
+                <Button
+                  onClick={reset}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium h-11 shadow-sm transition-all"
+                >
+                  Try again
+                </Button>
               </div>
             </div>
           </CardContent>
         </Card>
-
-        {/* Footer Skeleton */}
-        <div className="text-center mt-6">
-          <Skeleton className="h-3 w-64 mx-auto" />
-        </div>
       </div>
     </div>
   );
 }
+
