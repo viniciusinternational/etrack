@@ -6,7 +6,8 @@ import { UserRole } from "@prisma/client";
 import { requireAuth } from "@/lib/api-permissions";
 
 const updateUserSchema = z.object({
-  name: z.string().min(1).optional(),
+  firstname: z.string().min(1).optional(),
+  lastname: z.string().min(1).optional(),
   email: z.string().email().optional(),
   role: z.nativeEnum(UserRole).optional(),
   mdaId: z.string().optional(),
@@ -25,7 +26,8 @@ export async function GET(
       where: { id },
       select: {
         id: true,
-        name: true,
+        firstname: true,
+        lastname: true,
         email: true,
         role: true,
         mdaId: true,
@@ -117,7 +119,8 @@ export async function PUT(
       data: updateData,
       select: {
         id: true,
-        name: true,
+        firstname: true,
+        lastname: true,
         email: true,
         role: true,
         mdaId: true,

@@ -44,13 +44,8 @@ export function DashboardHeader({ user, onLogout }: DashboardHeaderProps) {
     onLogout?.();
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+  const getInitials = (firstname: string, lastname: string) => {
+    return `${firstname[0]}${lastname[0]}`.toUpperCase();
   };
 
   return (
@@ -138,13 +133,13 @@ export function DashboardHeader({ user, onLogout }: DashboardHeaderProps) {
                 className="flex items-center gap-2.5 px-3 py-2 h-10 rounded-lg hover:bg-accent/80 transition-all duration-200 hover:scale-105 active:scale-95"
               >
                 <Avatar className="h-7 w-7 border-2 border-primary/20">
-                  <AvatarImage src="" alt={user.name} />
+                  <AvatarImage src="" alt={`${user.firstname} ${user.lastname}`} />
                   <AvatarFallback className="bg-gradient-to-br from-primary via-primary/90 to-primary/70 text-primary-foreground font-semibold text-xs">
-                    {getInitials(user.name)}
+                    {getInitials(user.firstname, user.lastname)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden lg:block text-left">
-                  <p className="text-sm font-semibold leading-tight">{user.name}</p>
+                  <p className="text-sm font-semibold leading-tight">{`${user.firstname} ${user.lastname}`}</p>
                   <p className="text-xs text-muted-foreground leading-tight">{getRoleDisplayName(user.role)}</p>
                 </div>
                 <ChevronDown className="h-4 w-4 text-muted-foreground ml-1 transition-transform duration-200" />
@@ -153,7 +148,7 @@ export function DashboardHeader({ user, onLogout }: DashboardHeaderProps) {
             <DropdownMenuContent align="end" className="w-56 mt-2">
               <DropdownMenuLabel className="p-3">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-semibold">{user.name}</p>
+                  <p className="text-sm font-semibold">{`${user.firstname} ${user.lastname}`}</p>
                   <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                 </div>
               </DropdownMenuLabel>

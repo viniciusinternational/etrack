@@ -8,6 +8,7 @@ export enum PermissionModule {
   USER = "USER",
   MDA = "MDA",
   PROJECT = "PROJECT",
+  MILESTONE = "MILESTONE",
   SUBMISSION = "SUBMISSION",
   BUDGET = "BUDGET",
   EXPENDITURE = "EXPENDITURE",
@@ -67,6 +68,14 @@ export const ALL_PERMISSIONS: PermissionDefinition[] = [
   { module: PermissionModule.PROJECT, action: PermissionAction.DELETE, description: "Delete projects" },
   { module: PermissionModule.PROJECT, action: PermissionAction.EXPORT, description: "Export project data" },
   { module: PermissionModule.PROJECT, action: PermissionAction.MANAGE, description: "Manage project lifecycle" },
+
+  // MILESTONE permissions
+  { module: PermissionModule.MILESTONE, action: PermissionAction.CREATE, description: "Create milestones" },
+  { module: PermissionModule.MILESTONE, action: PermissionAction.READ, description: "View milestones" },
+  { module: PermissionModule.MILESTONE, action: PermissionAction.UPDATE, description: "Edit milestones" },
+  { module: PermissionModule.MILESTONE, action: PermissionAction.DELETE, description: "Delete milestones" },
+  { module: PermissionModule.MILESTONE, action: PermissionAction.APPROVE, description: "Approve milestones" },
+  { module: PermissionModule.MILESTONE, action: PermissionAction.REJECT, description: "Reject milestones" },
 
   // SUBMISSION permissions
   { module: PermissionModule.SUBMISSION, action: PermissionAction.CREATE, description: "Create milestone submissions" },

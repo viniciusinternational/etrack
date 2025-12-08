@@ -336,13 +336,17 @@ export function ProjectListView({
                   ),
                 },
                 {
-                  accessorKey: "contractor.name",
+                  id: "contractor",
                   header: "Contractor",
-                  cell: ({ row }) => (
-                    <div className="text-sm truncate max-w-[160px]">
-                      {row.original.contractor?.name || 'N/A'}
-                    </div>
-                  ),
+                  cell: ({ row }) => {
+                    const contractor = row.original.contractor;
+                    const name = contractor ? `${contractor.firstname} ${contractor.lastname}` : 'N/A';
+                    return (
+                      <div className="text-sm truncate max-w-[160px]">
+                        {name}
+                      </div>
+                    );
+                  },
                 },
                 {
                   accessorKey: "contractValue",

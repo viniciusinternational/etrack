@@ -21,8 +21,7 @@ import {
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { type Project, ProjectCategory, type MDA, type User, ProjectFormInput, type ProjectMilestoneTemplate, type MilestoneSubmission } from "@/types";
-import { MilestoneTemplateForm } from "@/components/projects/milestone-template-form";
+import { type Project, ProjectCategory, type MDA, type User, ProjectFormInput, type MilestoneSubmission, UserRole } from "@/types";
 import { MilestoneSubmissionForm } from "@/components/projects/milestone-submission-form";
 import { useProjectPermissions } from "@/hooks/use-project-permissions";
 
@@ -30,6 +29,7 @@ export function ProjectFormView({
   project,
   mdas = [],
   contractors = [],
+  supervisors = [],
   onBack,
   onSave,
   isSaving = false,
@@ -37,6 +37,7 @@ export function ProjectFormView({
   project: Project | null;
   mdas?: MDA[];
   contractors?: User[];
+  supervisors?: User[];
   onBack: () => void;
   onSave: (data: ProjectFormInput) => void;
   isSaving?: boolean;
@@ -51,17 +52,6 @@ export function ProjectFormView({
     return d.toISOString().split("T")[0];
   };
 
-  // Parse plannedMilestones from JSON if it's a string
-  const parsePlannedMilestones = (): ProjectMilestoneTemplate[] => {
-    if (!project?.plannedMilestones) return [];
-    if (Array.isArray(project.plannedMilestones)) return project.plannedMilestones;
-    try {
-      return JSON.parse(project.plannedMilestones as any);
-    } catch {
-      return [];
-    }
-  };
-
   const [formData, setFormData] = useState({
     title: project?.title || "",
     description: project?.description || "",
@@ -69,11 +59,11 @@ export function ProjectFormView({
       (project?.category as ProjectCategory) || ProjectCategory.Infrastructure,
     supervisingMdaId: project?.supervisingMdaId || "",
     contractorId: project?.contractorId || "",
+    supervisorId: project?.supervisorId || "",
     contractValue: project?.contractValue || 0,
     startDate: formatDateForInput(project?.startDate),
     endDate: formatDateForInput(project?.endDate),
     evidenceDocs: project?.evidenceDocs || [],
-    plannedMilestones: parsePlannedMilestones(),
   });
 
   const [milestoneSubmissions, setMilestoneSubmissions] = useState<MilestoneSubmission[]>(
@@ -83,10 +73,9 @@ export function ProjectFormView({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Save project with planned milestones
+    // Save project
     const projectData: ProjectFormInput = {
       ...formData,
-      plannedMilestones: formData.plannedMilestones,
     };
     
     onSave(projectData);
@@ -201,7 +190,7 @@ export function ProjectFormView({
                       setFormData({ ...formData, supervisingMdaId: value })
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-[240px]">
                       <SelectValue placeholder="Select MDA (Optional)" />
                     </SelectTrigger>
                     <SelectContent>
@@ -222,13 +211,36 @@ export function ProjectFormView({
                       setFormData({ ...formData, contractorId: value })
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-[240px]">
                       <SelectValue placeholder="Select Contractor (Optional)" />
                     </SelectTrigger>
                     <SelectContent>
                       {contractors.map((contractor) => (
                         <SelectItem key={contractor.id} value={contractor.id}>
-                          {contractor.name}
+                          {contractor ? `${contractor.firstname} ${contractor.lastname}` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="supervisor">Supervisor</Label>
+                  <Select
+                    value={formData.supervisorId}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, supervisorId: value })
+                    }
+                  >
+                    <SelectTrigger className="w-[240px]">
+                      <SelectValue placeholder="Select Supervisor (Optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {supervisors.map((supervisor) => (
+                        <SelectItem key={supervisor.id} value={supervisor.id}>
+                          {supervisor ? `${supervisor.firstname} ${supervisor.lastname}` : ''}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -320,49 +332,6 @@ export function ProjectFormView({
           </CardContent>
         </Card>
 
-        {/* Milestones Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Milestones</CardTitle>
-            <CardDescription>
-              Define planned milestones and create milestone submissions
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="templates" className="w-full">
-              <TabsList>
-                <TabsTrigger value="templates">Planned Milestones</TabsTrigger>
-                <TabsTrigger value="submissions" disabled={!formData.contractorId}>
-                  Submissions {formData.contractorId ? "" : "(Requires Contractor)"}
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="templates" className="mt-4">
-                <MilestoneTemplateForm
-                  templates={formData.plannedMilestones}
-                  onChange={(templates) =>
-                    setFormData({ ...formData, plannedMilestones: templates })
-                  }
-                />
-              </TabsContent>
-              
-              <TabsContent value="submissions" className="mt-4">
-                {formData.contractorId ? (
-                  <MilestoneSubmissionForm
-                    submissions={milestoneSubmissions}
-                    projectId={project?.id || ""}
-                    contractorId={formData.contractorId}
-                    onChange={setMilestoneSubmissions}
-                  />
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>Please select a contractor first to create milestone submissions.</p>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
 
         <div className="flex flex-col sm:flex-row justify-end gap-4 mt-6">
           <Button

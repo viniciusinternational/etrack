@@ -156,7 +156,7 @@ export function ContractorCalendarDashboard() {
                           Reviewed by
                         </p>
                         <p className="text-foreground">
-                          {selectedSubmission.reviewer.name}
+                          {selectedSubmission.reviewer ? `${selectedSubmission.reviewer.firstname} ${selectedSubmission.reviewer.lastname}` : 'N/A'}
                         </p>
                       </div>
                     )}

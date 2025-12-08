@@ -62,7 +62,8 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
   useEffect(() => {
     if (user) {
       setFormData({
-        name: user.name,
+        firstname: user.firstname,
+        lastname: user.lastname,
         email: user.email,
         role: user.role,
         mdaId: user.mdaId || "",
@@ -83,13 +84,14 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
 
     if (!user || !formData) return;
 
-    if (!formData.name || !formData.email || !formData.mdaId) {
+    if (!formData.firstname || !formData.lastname || !formData.email || !formData.mdaId) {
       toast.error("Please fill in all required fields");
       return;
     }
 
     const updates: any = {
-      name: formData.name,
+      firstname: formData.firstname,
+      lastname: formData.lastname,
       email: formData.email,
       role: formData.role,
       mdaId: formData.mdaId,
@@ -209,17 +211,12 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16">
                 <AvatarFallback className="bg-primary text-primary-foreground font-medium text-lg">
-                  {user.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .toUpperCase()
-                    .slice(0, 2)}
+                  {`${user.firstname[0]}${user.lastname[0]}`.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-lg font-semibold">{user.name}</h3>
+                  <h3 className="text-lg font-semibold">{`${user.firstname} ${user.lastname}`}</h3>
                   <Badge variant={getRoleBadgeVariant(user.role)}>
                     {user.role}
                   </Badge>
@@ -245,19 +242,35 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">
-                    Full Name <span className="text-destructive">*</span>
+                  <Label htmlFor="firstname">
+                    First Name <span className="text-destructive">*</span>
                   </Label>
                   <Input
-                    id="name"
-                    value={formData.name}
+                    id="firstname"
+                    value={formData.firstname}
                     onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
+                      setFormData({ ...formData, firstname: e.target.value })
                     }
-                    placeholder="Enter full name"
+                    placeholder="Enter first name"
                     required
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastname">
+                    Last Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="lastname"
+                    value={formData.lastname}
+                    onChange={(e) =>
+                      setFormData({ ...formData, lastname: e.target.value })
+                    }
+                    placeholder="Enter last name"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">
                     Email Address <span className="text-destructive">*</span>

@@ -282,7 +282,7 @@ export function MilestoneStatusView({
                             Reviewed By
                           </p>
                           <p className="font-medium">
-                            {latest.reviewer?.name || "N/A"}
+                            {latest.reviewer ? `${latest.reviewer.firstname} ${latest.reviewer.lastname}` : "N/A"}
                           </p>
                         </div>
                         <div>

@@ -34,7 +34,8 @@ export async function GET(request: NextRequest) {
         take: 5,
         select: {
           id: true,
-          name: true,
+          firstname: true,
+          lastname: true,
           email: true,
           role: true,
           createdAt: true,

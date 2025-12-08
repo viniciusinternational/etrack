@@ -76,8 +76,11 @@ export default function UserManagementPage() {
   // Filtered Users
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
+      const fullName = `${user.firstname} ${user.lastname}`;
       const matchesSearch =
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.firstname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.lastname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesRole = roleFilter === "all" || user.role === roleFilter;
       const matchesStatus =
@@ -279,30 +282,28 @@ export default function UserManagementPage() {
             columns={(() => {
               const cols: ColumnDef<User>[] = [
                 {
-                  accessorKey: "name",
+                  id: "name",
                   header: "User",
-                  cell: ({ row }: { row: Row<User> }) => (
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-primary text-primary-foreground font-medium">
-                          {row.original.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .toUpperCase()
-                            .slice(0, 2)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium text-foreground">
-                          {row.original.name}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {row.original.email}
+                  cell: ({ row }: { row: Row<User> }) => {
+                    const fullName = `${row.original.firstname} ${row.original.lastname}`;
+                    return (
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback className="bg-primary text-primary-foreground font-medium">
+                            {`${row.original.firstname[0]}${row.original.lastname[0]}`.toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium text-foreground">
+                            {fullName}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {row.original.email}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ),
+                    );
+                  },
                 },
                 {
                   accessorKey: "role",
@@ -363,7 +364,7 @@ export default function UserManagementPage() {
           <DialogHeader>
             <DialogTitle>Delete User</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete {selectedUser?.name}? This action
+              Are you sure you want to delete {selectedUser ? `${selectedUser.firstname} ${selectedUser.lastname}` : ''}? This action
               cannot be undone.
             </DialogDescription>
           </DialogHeader>

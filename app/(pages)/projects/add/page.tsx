@@ -15,6 +15,11 @@ export default function AddProjectPage() {
   const { data: users, isLoading: isLoadingUsers } = useUsers();
 
   const contractors = users?.filter(u => u.role === UserRole.Contractor) || [];
+  const supervisors = users?.filter(u => 
+    u.role === UserRole.Admin || 
+    u.role === UserRole.ProjectManager || 
+    u.role === UserRole.GovernorAdmin
+  ) || [];
 
   const handleSave = (input: ProjectFormInput) => {
     const newProject: Project = {
@@ -50,6 +55,7 @@ export default function AddProjectPage() {
       project={null}
       mdas={mdas || []}
       contractors={contractors}
+      supervisors={supervisors}
       onBack={() => router.back()}
       onSave={handleSave}
       isSaving={isPending}

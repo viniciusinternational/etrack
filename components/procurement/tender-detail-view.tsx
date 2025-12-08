@@ -224,7 +224,7 @@ export function TenderDetailView({ tender, onEdit }: TenderDetailViewProps) {
                       return (
                         <TableRow key={bid.id}>
                           <TableCell className="font-medium">
-                            {bid.vendor?.name || "Unknown Vendor"}
+                            {bid.vendor ? `${bid.vendor.firstname} ${bid.vendor.lastname}` : "Unknown Vendor"}
                           </TableCell>
                           <TableCell className="font-semibold">
                             {formatCurrency(bid.bidAmount)}
@@ -252,7 +252,7 @@ export function TenderDetailView({ tender, onEdit }: TenderDetailViewProps) {
                                   <DialogHeader>
                                     <DialogTitle>Bid Details</DialogTitle>
                                     <DialogDescription>
-                                      Vendor: {bid.vendor?.name}
+                                      Vendor: {bid.vendor ? `${bid.vendor.firstname} ${bid.vendor.lastname}` : "Unknown Vendor"}
                                     </DialogDescription>
                                   </DialogHeader>
                                   <div className="space-y-4">

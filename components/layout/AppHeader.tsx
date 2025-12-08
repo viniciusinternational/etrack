@@ -47,13 +47,8 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
     onLogout?.();
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+  const getInitials = (firstname: string, lastname: string) => {
+    return `${firstname[0]}${lastname[0]}`.toUpperCase();
   };
 
   return (
@@ -131,13 +126,13 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
               className="flex items-center gap-3 px-3 py-2 h-11 rounded-xl hover:bg-accent/50 transition-all duration-200 hover:shadow-md hover:shadow-primary/10"
             >
               <Avatar className="h-8 w-8 ring-2 ring-primary/20">
-                <AvatarImage src="" alt={user.name} />
+                <AvatarImage src="" alt={`${user.firstname} ${user.lastname}`} />
                 <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold">
-                  {getInitials(user.name)}
+                  {getInitials(user.firstname, user.lastname)}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden md:block text-left">
-                <p className="text-sm font-semibold">{user.name}</p>
+                <p className="text-sm font-semibold">{`${user.firstname} ${user.lastname}`}</p>
                 <p className="text-xs text-muted-foreground">{getRoleDisplayName(user.role)}</p>
               </div>
               <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200" />
@@ -146,7 +141,7 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium">{user.name}</p>
+                <p className="text-sm font-medium">{`${user.firstname} ${user.lastname}`}</p>
                 <p className="text-xs text-muted-foreground">{user.email}</p>
               </div>
             </DropdownMenuLabel>

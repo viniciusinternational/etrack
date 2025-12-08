@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
       select: {
         id: true,
         email: true,
-        name: true,
+        firstname: true,
+        lastname: true,
         role: true,
         mdaId: true,
         status: true,
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
 
         await createAuditLog({
           userId: user.id,
-          userSnapshot: { email: user.email, name: user.name },
+          userSnapshot: { email: user.email, name: `${user.firstname} ${user.lastname}` },
           actionType: "LOGIN",
           entityType: "User",
           entityId: user.id,
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
 
       await createAuditLog({
         userId: user.id,
-        userSnapshot: { email: user.email, name: user.name, role: user.role },
+        userSnapshot: { email: user.email, name: `${user.firstname} ${user.lastname}`, role: user.role },
         actionType: "LOGIN",
         entityType: "User",
         entityId: user.id,
@@ -123,7 +124,8 @@ export async function POST(request: NextRequest) {
     const userData = {
       id: user.id,
       email: user.email,
-      name: user.name,
+      firstname: user.firstname,
+      lastname: user.lastname,
       role: user.role,
       mdaId: user.mdaId,
       mustChangePassword: user.mustChangePassword,

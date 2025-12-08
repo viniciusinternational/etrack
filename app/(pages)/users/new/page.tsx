@@ -49,7 +49,8 @@ export default function NewUserPage() {
   const mdas = mdasData || [];
 
   const [formData, setFormData] = useState<UserFormData>({
-    name: "",
+    firstname: "",
+    lastname: "",
     email: "",
     role: UserRole.MeetingUser,
     mdaId: "",
@@ -63,13 +64,14 @@ export default function NewUserPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.email || !formData.mdaId) {
+    if (!formData.firstname || !formData.lastname || !formData.email || !formData.mdaId) {
       toast.error("Please fill in all required fields");
       return;
     }
 
     const newUser: any = {
-      name: formData.name,
+      firstname: formData.firstname,
+      lastname: formData.lastname,
       email: formData.email,
       role: formData.role,
       mdaId: formData.mdaId,
@@ -170,19 +172,35 @@ export default function NewUserPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">
-                    Full Name <span className="text-destructive">*</span>
+                  <Label htmlFor="firstname">
+                    First Name <span className="text-destructive">*</span>
                   </Label>
                   <Input
-                    id="name"
-                    value={formData.name}
+                    id="firstname"
+                    value={formData.firstname}
                     onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
+                      setFormData({ ...formData, firstname: e.target.value })
                     }
-                    placeholder="Enter full name"
+                    placeholder="Enter first name"
                     required
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastname">
+                    Last Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="lastname"
+                    value={formData.lastname}
+                    onChange={(e) =>
+                      setFormData({ ...formData, lastname: e.target.value })
+                    }
+                    placeholder="Enter last name"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">
                     Email Address <span className="text-destructive">*</span>

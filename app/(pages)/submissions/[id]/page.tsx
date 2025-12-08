@@ -10,14 +10,22 @@ import { Progress } from "@/components/ui/progress";
 import { useSubmission, useUpdateSubmission } from "@/hooks/use-submissions";
 import { SubmissionStatus } from "@/types";
 import Link from "next/link";
+import { useAuthStore } from "@/store/auth-store";
+import { hasPermission } from "@/lib/permissions";
 
 export default function SubmissionDetailPage() {
   const router = useRouter();
   const params = useParams();
   const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
+  const { user } = useAuthStore();
   const { data: submission, isLoading } = useSubmission(id as string);
   const { mutate: updateSubmission, isPending: isUpdating } = useUpdateSubmission();
+
+  // Check permissions
+  const canApprove = hasPermission(user, 'approve_submission');
+  const canReject = hasPermission(user, 'reject_submission');
+  const canEdit = hasPermission(user, 'edit_submission');
 
   const handleStatusUpdate = (status: SubmissionStatus) => {
     if (!submission) return;
@@ -62,12 +70,14 @@ export default function SubmissionDetailPage() {
             </p>
           </div>
         </div>
-        <Link href={`/submissions/${id}/edit`}>
+        {canEdit && (
+          <Link href={`/submissions/${id}/edit`}>
             <Button variant="outline">
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Submission
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Submission
             </Button>
-        </Link>
+          </Link>
+        )}
       </div>
 
       {/* Card */}
@@ -78,7 +88,7 @@ export default function SubmissionDetailPage() {
         <CardContent className="space-y-4">
           <div>
             <h3 className="text-sm text-gray-500">Contractor</h3>
-            <p className="text-lg font-semibold">{submission.contractor?.name || "Unknown Contractor"}</p>
+            <p className="text-lg font-semibold">{submission.contractor ? `${submission.contractor.firstname} ${submission.contractor.lastname}` : "Unknown Contractor"}</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -127,21 +137,30 @@ export default function SubmissionDetailPage() {
           <div className="pt-6 flex justify-end gap-3 border-t mt-4">
             {submission.status === SubmissionStatus.Pending && (
                 <>
-                    <Button 
-                        variant="destructive" 
-                        onClick={() => handleStatusUpdate(SubmissionStatus.Rejected)}
-                        disabled={isUpdating}
-                    >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Reject
-                    </Button>
-                    <Button 
-                        onClick={() => handleStatusUpdate(SubmissionStatus.Approved)}
-                        disabled={isUpdating}
-                    >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Approve
-                    </Button>
+                    {canReject && (
+                      <Button 
+                          variant="destructive" 
+                          onClick={() => handleStatusUpdate(SubmissionStatus.Rejected)}
+                          disabled={isUpdating}
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Reject
+                      </Button>
+                    )}
+                    {canApprove && (
+                      <Button 
+                          onClick={() => handleStatusUpdate(SubmissionStatus.Approved)}
+                          disabled={isUpdating}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Approve
+                      </Button>
+                    )}
+                    {!canApprove && !canReject && (
+                      <div className="text-sm text-gray-500">
+                        You don't have permission to approve or reject this submission.
+                      </div>
+                    )}
                 </>
             )}
             {submission.status !== SubmissionStatus.Pending && (
@@ -152,6 +171,11 @@ export default function SubmissionDetailPage() {
                     }`}>
                         {submission.status}
                     </span>
+                    {submission.reviewer && (
+                      <span className="text-xs text-gray-500">
+                        Reviewed by: {submission.reviewer.firstname} {submission.reviewer.lastname}
+                      </span>
+                    )}
                 </div>
             )}
           </div>

@@ -43,7 +43,8 @@ export async function POST(
       },
       select: {
         id: true,
-        name: true,
+        firstname: true,
+        lastname: true,
         email: true,
         mustChangePassword: true,
       },

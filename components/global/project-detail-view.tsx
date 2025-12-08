@@ -8,6 +8,7 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +34,6 @@ import {
   getMilestoneStageLabel,
 } from "@/components/projects-manager/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { type ProjectMilestoneTemplate } from "@/types";
 
 export function ProjectDetailView({
   project,
@@ -147,13 +147,26 @@ export function ProjectDetailView({
                 <h3 className="text-sm font-medium text-gray-500 mb-1 flex items-center gap-2">
                   <Building className="h-4 w-4" /> Supervising MDA
                 </h3>
-                <p className="text-gray-900">{project.supervisingMda?.name}</p>
+                <p className="text-gray-900">{project.supervisingMda?.name || 'N/A'}</p>
               </div>
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">
                   Contractor
                 </h3>
-                <p className="text-gray-900">{project.contractor?.name}</p>
+                <p className="text-gray-900">{project.contractor ? `${project.contractor.firstname} ${project.contractor.lastname}` : 'N/A'}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">
+                  Supervisor
+                </h3>
+                <p className="text-gray-900">
+                  {project.supervisor 
+                    ? `${project.supervisor.firstname} ${project.supervisor.lastname} (${project.supervisor.role})`
+                    : 'N/A'}
+                </p>
               </div>
             </div>
 
@@ -269,108 +282,30 @@ export function ProjectDetailView({
       {/* Milestones section */}
       <Card>
         <CardHeader>
-          <CardTitle>Milestones</CardTitle>
-          <CardDescription>
-            Planned milestones and contractor submissions
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Milestone Submissions</CardTitle>
+              <CardDescription>
+                Contractor milestone submissions for this project
+              </CardDescription>
+            </div>
+            {project.contractorId && (
+              <Button
+                onClick={() => {
+                  // This will be handled by parent component
+                  if (typeof window !== 'undefined' && (window as any).openMilestoneModal) {
+                    (window as any).openMilestoneModal();
+                  }
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Milestone
+              </Button>
+            )}
+          </div>
         </CardHeader>
 
         <CardContent>
-          <Tabs defaultValue="planned" className="w-full">
-            <TabsList>
-              <TabsTrigger value="planned">Planned Milestones</TabsTrigger>
-              <TabsTrigger value="submissions">
-                Submissions ({milestones.length})
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="planned" className="mt-4">
-              {(() => {
-                let plannedMilestones: ProjectMilestoneTemplate[] = [];
-                if (project.plannedMilestones) {
-                  if (Array.isArray(project.plannedMilestones)) {
-                    plannedMilestones = project.plannedMilestones;
-                  } else if (typeof project.plannedMilestones === 'string') {
-                    try {
-                      plannedMilestones = JSON.parse(project.plannedMilestones);
-                    } catch {
-                      plannedMilestones = [];
-                    }
-                  } else {
-                    plannedMilestones = project.plannedMilestones as any;
-                  }
-                }
-                
-                if (plannedMilestones.length === 0) {
-                  return (
-                    <div className="text-center py-12">
-                      <Clock className="mx-auto h-12 w-12 text-gray-400" />
-                      <h3 className="mt-4 text-lg font-medium text-gray-900">
-                        No planned milestones
-                      </h3>
-                      <p className="mt-2 text-sm text-gray-500">
-                        Planned milestones will appear here once they are defined for the project.
-                      </p>
-                    </div>
-                  );
-                }
-                
-                return (
-                  <div className="space-y-4">
-                    {plannedMilestones.map((template, index) => {
-                    const hasSubmission = milestones.some(
-                      (m) => m.milestoneStage === template.stage
-                    );
-                    return (
-                      <Card key={index}>
-                        <CardContent className="pt-6">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-3">
-                                <h3 className="text-lg font-semibold text-gray-900">
-                                  {getMilestoneStageLabel(template.stage)}
-                                </h3>
-                                {hasSubmission && (
-                                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                                    Has Submission
-                                  </Badge>
-                                )}
-                              </div>
-                              {template.description && (
-                                <p className="text-sm text-gray-700 mb-2">
-                                  {template.description}
-                                </p>
-                              )}
-                              <div className="grid grid-cols-2 gap-4">
-                                {template.targetDate && (
-                                  <div>
-                                    <span className="text-sm text-gray-500">Target Date</span>
-                                    <div className="mt-1 text-sm text-gray-700">
-                                      {formatDateLong(template.targetDate)}
-                                    </div>
-                                  </div>
-                                )}
-                                {template.targetPercent !== undefined && (
-                                  <div>
-                                    <span className="text-sm text-gray-500">Target %</span>
-                                    <div className="mt-1 text-sm font-medium text-gray-700">
-                                      {template.targetPercent}%
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                  </div>
-                );
-              })()}
-            </TabsContent>
-
-            <TabsContent value="submissions" className="mt-4">
               {milestones.length === 0 ? (
                 <div className="text-center py-12">
                   <Clock className="mx-auto h-12 w-12 text-gray-400" />
@@ -462,8 +397,6 @@ export function ProjectDetailView({
               ))}
             </div>
               )}
-            </TabsContent>
-          </Tabs>
         </CardContent>
       </Card>
     </>
