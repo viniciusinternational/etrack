@@ -81,7 +81,7 @@ export function AppSidebar() {
   return (
     <Sidebar
       collapsible="icon"
-      className="border-r border-sidebar-border/50 bg-sidebar shadow-lg"
+      className="border-r border-sidebar-border/50 bg-sidebar-accent-foreground shadow-lg"
     >
       {/* Header with Logo */}
       <SidebarHeader className="border-b border-sidebar-border/50 bg-gradient-to-r from-sidebar-primary/10 via-sidebar-primary/5 to-transparent">
