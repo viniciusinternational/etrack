@@ -7,7 +7,8 @@ import { hashPassword, generatePassword } from "@/lib/password";
 import { requireAuth } from "@/lib/api-permissions";
 
 const createUserSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  firstname: z.string().min(1, "First name is required"),
+  lastname: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email"),
   role: z.nativeEnum(UserRole),
   mdaId: z
@@ -31,7 +32,8 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
-        name: true,
+        firstname: true,
+        lastname: true,
         email: true,
         role: true,
         mdaId: true,
@@ -69,6 +71,7 @@ export async function POST(request: NextRequest) {
     if (authResult instanceof NextResponse) {
       return authResult;
     }
+    const { user } = authResult;
 
     const body = await request.json();
     const validatedData = createUserSchema.parse(body);
@@ -99,7 +102,8 @@ export async function POST(request: NextRequest) {
     // Create user
     const newUser = await prisma.user.create({
       data: {
-        name: validatedData.name,
+        firstname: validatedData.firstname,
+        lastname: validatedData.lastname,
         email: validatedData.email,
         role: validatedData.role,
         mdaId: validatedData.mdaId,
@@ -109,7 +113,8 @@ export async function POST(request: NextRequest) {
       },
       select: {
         id: true,
-        name: true,
+        firstname: true,
+        lastname: true,
         email: true,
         role: true,
         mdaId: true,
@@ -129,7 +134,7 @@ export async function POST(request: NextRequest) {
       const ip = headersList.get("x-forwarded-for") ?? undefined;
 
       await createAuditLog({
-        userId: userId || "system",
+        userId: user.id,
         userSnapshot,
         actionType: "CREATE",
         entityType: "User",

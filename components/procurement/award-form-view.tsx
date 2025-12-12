@@ -136,7 +136,7 @@ export function AwardFormView({ award, onBack, onSave }: AwardFormViewProps) {
                 <SelectContent>
                   {vendors.map((v) => (
                     <SelectItem key={v.id} value={v.id}>
-                      {v.name}
+                      {`${v.firstname} ${v.lastname}`}
                     </SelectItem>
                   ))}
                 </SelectContent>

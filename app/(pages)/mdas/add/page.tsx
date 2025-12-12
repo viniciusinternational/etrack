@@ -124,8 +124,8 @@ export default function AddMDAPage() {
                   >
                     <option value="">Select Head of MDA</option>
                     {users?.map((user) => (
-                      <option key={user.id} value={user.name}>
-                        {user.name}
+                      <option key={user.id} value={`${user.firstname} ${user.lastname}`}>
+                        {`${user.firstname} ${user.lastname}`}
                       </option>
                     ))}
                   </select>

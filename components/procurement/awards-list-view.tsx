@@ -101,11 +101,13 @@ export function AwardsListView() {
                   ),
                 },
                 {
-                  accessorKey: "vendor.name",
+                  id: "vendor",
                   header: "Awarded Vendor",
-                  cell: ({ row }) => (
-                    <div className="text-sm">{row.original.vendor?.name}</div>
-                  ),
+                  cell: ({ row }) => {
+                    const vendor = row.original.vendor;
+                    const name = vendor ? `${vendor.firstname} ${vendor.lastname}` : 'N/A';
+                    return <div className="text-sm">{name}</div>;
+                  },
                 },
                 {
                   accessorKey: "contractValue",

@@ -27,6 +27,8 @@ import { Loader2, Key, Shield, CheckCircle2, XCircle } from "lucide-react";
 import { PermissionsEditor } from "@/components/user/permissions-editor";
 import type { PartialUserPermissions } from "@/types/permissions";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import axios from "axios";
 import { toast } from "sonner";
 
@@ -102,7 +104,7 @@ export default function UserViewClient({ id }: { id: string }) {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <h1 className="text-2xl font-semibold">{user.name}</h1>
+          <h1 className="text-2xl font-semibold">{`${user.firstname} ${user.lastname}`}</h1>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => router.push(`/users/${user.id}/edit`)}>
@@ -126,7 +128,7 @@ export default function UserViewClient({ id }: { id: string }) {
             <div>
               <div className="text-sm text-muted-foreground">MDA</div>
               <div className="font-medium">
-                {(user as any).mdaName || "-"}
+                {user.mdaName || "-"}
               </div>
             </div>
             <div>
@@ -142,15 +144,15 @@ export default function UserViewClient({ id }: { id: string }) {
             <div>
               <div className="text-sm text-muted-foreground">Last Login</div>
               <div className="font-medium">
-                {(user as any).lastLogin
-                  ? new Date((user as any).lastLogin).toLocaleDateString()
+                {user.lastLogin
+                  ? new Date(user.lastLogin).toLocaleDateString()
                   : "Never"}
               </div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Password Status</div>
               <div className="font-medium flex items-center gap-2">
-                {(user as any).mustChangePassword ? (
+                {user.mustChangePassword ? (
                   <>
                     <XCircle className="h-4 w-4 text-destructive" />
                     <span className="text-destructive">Must Change</span>
@@ -163,11 +165,11 @@ export default function UserViewClient({ id }: { id: string }) {
                 )}
               </div>
             </div>
-            {(user as any).passwordChangedAt && (
+            {user.passwordChangedAt && (
               <div>
                 <div className="text-sm text-muted-foreground">Password Changed</div>
                 <div className="font-medium">
-                  {new Date((user as any).passwordChangedAt).toLocaleDateString()}
+                  {new Date(user.passwordChangedAt).toLocaleDateString()}
                 </div>
               </div>
             )}
@@ -250,7 +252,7 @@ export default function UserViewClient({ id }: { id: string }) {
           <DialogHeader>
             <DialogTitle>Manage Permissions</DialogTitle>
             <DialogDescription>
-              Assign or remove permissions for {user.name}
+              Assign or remove permissions for {`${user.firstname} ${user.lastname}`}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -277,7 +279,7 @@ export default function UserViewClient({ id }: { id: string }) {
           <DialogHeader>
             <DialogTitle>Password Generated</DialogTitle>
             <DialogDescription>
-              A new password has been generated for {user.name}
+              A new password has been generated for {`${user.firstname} ${user.lastname}`}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">

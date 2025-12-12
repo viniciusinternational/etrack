@@ -25,12 +25,15 @@ export enum UserRole {
 export interface User {
   id: string;
   email: string;
-  name: string;
+  firstname: string;
+  lastname: string;
   role: UserRole;
   mdaId?: string;
   mdaName?: string;
   status: "active" | "inactive";
   lastLogin?: Date;
+  mustChangePassword?: boolean;
+  passwordChangedAt?: Date;
   permissions?: import('./permissions').UserPermissions; // RBAS: JSON permissions in action_module format
   createdAt: Date;
   updatedAt: Date;
@@ -92,16 +95,17 @@ export interface Project {
   title: string;
   description: string;
   category: ProjectCategory;
-  supervisingMdaId: string;
+  supervisingMdaId?: string;
   supervisingMda?: MDA;
-  contractorId: string;
+  contractorId?: string;
   contractor?: User;
+  supervisorId?: string;
+  supervisor?: User;
   contractValue: number;
   startDate: Date;
   endDate: Date;
   status: ProjectStatus;
   evidenceDocs: string[];
-  plannedMilestones?: ProjectMilestoneTemplate[];
   milestones?: MilestoneSubmission[];
   expenditures?: Expenditure[];
   createdAt: Date;
@@ -112,13 +116,13 @@ export type ProjectFormInput = {
   title: string;
   description: string;
   category: ProjectCategory;
-  supervisingMdaId: string;
-  contractorId: string;
+  supervisingMdaId?: string;
+  contractorId?: string;
+  supervisorId?: string;
   contractValue: number;
   startDate: string; // string from input
   endDate: string; // string from input
   evidenceDocs: string[];
-  plannedMilestones?: ProjectMilestoneTemplate[];
 };
 
 // =====================================================
@@ -447,7 +451,8 @@ export interface MilestoneFormData {
 // =====================================================
 
 export interface UserFormData {
-  name: string;
+  firstname: string;
+  lastname: string;
   email: string;
   role: UserRole;
   mdaId?: string;

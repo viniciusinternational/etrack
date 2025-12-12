@@ -279,7 +279,7 @@ export default function ProjectList({
                         </Badge>
                       </TableCell>
                       <TableCell>{project.supervisingMda?.name}</TableCell>
-                      <TableCell>{project.contractor?.name}</TableCell>
+                      <TableCell>{project.contractor ? `${project.contractor.firstname} ${project.contractor.lastname}` : 'N/A'}</TableCell>
                       <TableCell>
                         {formatCurrency(project.contractValue)}
                       </TableCell>

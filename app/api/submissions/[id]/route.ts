@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { createAuditLog, getUserInfoFromHeaders } from "@/lib/audit-logger";
 import { SubmissionStatus } from "@prisma/client";
+import { requireAuth } from "@/lib/api-permissions";
 
 const updateSubmissionSchema = z.object({
   percentComplete: z.number().min(0).max(100).optional(),
@@ -18,10 +19,32 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication and permission
+    const authResult = await requireAuth(request, ['view_submission']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+
     const { id } = await params;
     const submission = await prisma.milestoneSubmission.findUnique({
       where: { id },
-      include: { project: true, contractor: true, reviewer: true },
+      include: { 
+        project: {
+          include: {
+            supervisor: {
+              select: {
+                id: true,
+                firstname: true,
+                lastname: true,
+                email: true,
+                role: true,
+              },
+            },
+          },
+        },
+        contractor: true, 
+        reviewer: true 
+      },
     });
 
     if (!submission) {
@@ -46,12 +69,26 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication
+    const authResult = await requireAuth(request);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+    const { user } = authResult;
+
     const { id } = await params;
     const body = await request.json();
     const validatedData = updateSubmissionSchema.parse(body);
 
     const existingSubmission = await prisma.milestoneSubmission.findUnique({
       where: { id },
+      include: {
+        project: {
+          include: {
+            supervisor: true,
+          },
+        },
+      },
     });
     if (!existingSubmission) {
       return NextResponse.json(
@@ -60,8 +97,30 @@ export async function PUT(
       );
     }
 
-    // If status is changing to Approved/Rejected, set reviewedAt
-    const extraUpdates: { reviewedAt?: Date } = {};
+    // Check permissions based on what's being updated
+    if (validatedData.status && validatedData.status !== existingSubmission.status) {
+      // Status change requires approve/reject permission
+      if (validatedData.status === SubmissionStatus.Approved) {
+        const statusAuthResult = await requireAuth(request, ['approve_submission']);
+        if (statusAuthResult instanceof NextResponse) {
+          return statusAuthResult;
+        }
+      } else if (validatedData.status === SubmissionStatus.Rejected) {
+        const statusAuthResult = await requireAuth(request, ['reject_submission']);
+        if (statusAuthResult instanceof NextResponse) {
+          return statusAuthResult;
+        }
+      }
+    } else {
+      // Other updates require edit permission
+      const editAuthResult = await requireAuth(request, ['edit_submission']);
+      if (editAuthResult instanceof NextResponse) {
+        return editAuthResult;
+      }
+    }
+
+    // If status is changing to Approved/Rejected, set reviewedAt and reviewedBy
+    const extraUpdates: { reviewedAt?: Date; reviewedBy?: string } = {};
     if (
       validatedData.status &&
       validatedData.status !== existingSubmission.status
@@ -71,6 +130,7 @@ export async function PUT(
         validatedData.status === SubmissionStatus.Rejected
       ) {
         extraUpdates.reviewedAt = new Date();
+        extraUpdates.reviewedBy = user.id; // Auto-set to current user
       }
     }
 
@@ -122,6 +182,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication and permission
+    const authResult = await requireAuth(request, ['delete_submission']);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+
     const { id } = await params;
     const existingSubmission = await prisma.milestoneSubmission.findUnique({
       where: { id },

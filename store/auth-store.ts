@@ -5,7 +5,8 @@ import type { UserPermissions } from '@/types/permissions';
 
 interface UserState {
   id: string;
-  name: string;
+  firstname: string;
+  lastname: string;
   email: string;
   role: UserRole;
   mdaId?: string;

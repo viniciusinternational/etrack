@@ -29,7 +29,8 @@ async function getUserFromRequest(request: NextRequest): Promise<User | null> {
       select: {
         id: true,
         email: true,
-        name: true,
+        firstname: true,
+        lastname: true,
         role: true,
         mdaId: true,
         status: true,
@@ -48,7 +49,8 @@ async function getUserFromRequest(request: NextRequest): Promise<User | null> {
     return {
       id: user.id,
       email: user.email,
-      name: user.name,
+      firstname: user.firstname,
+      lastname: user.lastname,
       role: user.role,
       mdaId: user.mdaId || undefined,
       status: user.status === 'active' ? 'active' : 'inactive',
@@ -80,7 +82,6 @@ export async function requireAuth(
   requiredPermissions?: PermissionKey[]
 ): Promise<{ user: User } | NextResponse> {
   const user = await getUserFromRequest(request);
-  console.log({user})
   // Check authentication
   if (!user) {
     return NextResponse.json(

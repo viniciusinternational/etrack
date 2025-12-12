@@ -19,6 +19,11 @@ export default function EditProjectPage() {
   const { data: users, isLoading: isLoadingUsers } = useUsers();
 
   const contractors = users?.filter(u => u.role === UserRole.Contractor) || [];
+  const supervisors = users?.filter(u => 
+    u.role === UserRole.Admin || 
+    u.role === UserRole.ProjectManager || 
+    u.role === UserRole.GovernorAdmin
+  ) || [];
 
   const handleSave = (input: ProjectFormInput) => {
     if (!project) return;
@@ -66,6 +71,7 @@ export default function EditProjectPage() {
       project={project}
       mdas={mdas || []}
       contractors={contractors}
+      supervisors={supervisors}
       onBack={() => router.back()}
       onSave={handleSave}
       isSaving={isSaving}

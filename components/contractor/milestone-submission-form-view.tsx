@@ -34,6 +34,9 @@ export function MilestoneSubmissionFormView({
   onBack,
   onSave,
   isSubmitting = false,
+  canApprove = false,
+  canReject = false,
+  isContractor = false,
 }: {
   projectId: string;
   submission: MilestoneSubmission | null;
@@ -42,6 +45,9 @@ export function MilestoneSubmissionFormView({
   onBack: () => void;
   onSave: (data: MilestoneSubmissionFormInput) => void;
   isSubmitting?: boolean;
+  canApprove?: boolean;
+  canReject?: boolean;
+  isContractor?: boolean;
 }) {
   const { mutateAsync: uploadFile, isPending: isUploading } = useUpload();
   const [evidenceDocs, setEvidenceDocs] = useState<string[]>(
@@ -54,6 +60,7 @@ export function MilestoneSubmissionFormView({
     notes: submission?.notes || "",
     latitude: submission?.geoTag?.coordinates[1] || "",
     longitude: submission?.geoTag?.coordinates[0] || "",
+    status: submission?.status || SubmissionStatus.Pending,
   });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,7 +112,7 @@ export function MilestoneSubmissionFormView({
 
       evidenceDocs: evidenceDocs,
 
-      status: submission?.status ?? SubmissionStatus.Pending,
+      status: formData.status,
 
       createdAt: submission?.createdAt
         ? new Date(submission.createdAt).toISOString()
@@ -185,6 +192,41 @@ export function MilestoneSubmissionFormView({
                 />
               </div>
             </div>
+
+            {/* Status field - only for supervisors/reviewers */}
+            {(canApprove || canReject) && !isContractor && (
+              <div className="space-y-2">
+                <Label htmlFor="status">Status *</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      status: value as SubmissionStatus,
+                    })
+                  }
+                >
+                  <SelectTrigger id="status" className="w-[240px]">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={SubmissionStatus.Pending}>
+                      Pending
+                    </SelectItem>
+                    {canApprove && (
+                      <SelectItem value={SubmissionStatus.Approved}>
+                        Approved
+                      </SelectItem>
+                    )}
+                    {canReject && (
+                      <SelectItem value={SubmissionStatus.Rejected}>
+                        Rejected
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="notes">Notes & Comments</Label>

@@ -106,7 +106,8 @@ enum EventPriority {
 model User {
   id                 String    @id @default(cuid())
   email              String    @unique
-  name               String
+  firstname          String
+  lastname           String
   role               UserRole
   mdaId              String?
   mda                MDA?      @relation(fields: [mdaId], references: [id])
@@ -119,6 +120,7 @@ model User {
 
   // Relations
   contractorProjects Project[] @relation("Contractor")
+  supervisedProjects Project[] @relation("Supervisor")
 
   submittedMilestones MilestoneSubmission[] @relation("ContractorSubmission")
   reviewedMilestones  MilestoneSubmission[] @relation("Reviewer")
@@ -174,7 +176,9 @@ model Project {
   endDate           DateTime
   status            ProjectStatus
   evidenceDocs      String[] // Array of URLs
-  plannedMilestones Json? // Array of milestone templates
+
+  supervisorId String?
+  supervisor   User?   @relation("Supervisor", fields: [supervisorId], references: [id])
 
   // Relations
   milestones   MilestoneSubmission[]

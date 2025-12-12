@@ -6,7 +6,7 @@
 import { ApiResponse, PaginatedResponse } from "@/types";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+  process.env.NEXT_PUBLIC_API_URL || "/api";
 
 export interface ApiErrorDetails {
   error?: string;

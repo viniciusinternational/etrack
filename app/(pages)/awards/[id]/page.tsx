@@ -38,7 +38,7 @@ export default function AwardDetailPage() {
   }
 
   const tenderTitle = award.procurementRequest?.title ?? "-";
-  const vendorName = award.vendor?.name ?? "-";
+  const vendorName = award.vendor ? `${award.vendor.firstname} ${award.vendor.lastname}` : "-";
 
   return (
     <div className="space-y-6">
