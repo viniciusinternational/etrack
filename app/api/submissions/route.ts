@@ -45,7 +45,8 @@ export async function GET(request: NextRequest) {
         contractor: {
           select: {
             id: true,
-            name: true,
+            firstname: true,
+            lastname: true,
             email: true,
             role: true,
             status: true,

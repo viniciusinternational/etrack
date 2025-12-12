@@ -33,11 +33,13 @@ export function MilestoneStatusView({
   submissions,
   projectTitle,
   onBack,
+  onNewSubmission,
 }: {
   projectId: string;
   submissions: MilestoneSubmission[];
   projectTitle?: string;
   onBack: () => void;
+  onNewSubmission?: () => void;
 }) {
   const projectSubmissions = submissions.filter(
     (s) => s.projectId === projectId
@@ -326,9 +328,9 @@ export function MilestoneStatusView({
       )}
 
       <div className="flex justify-end gap-4 mt-6">
-        <Link href={`/contract/${projectId}/submit`}>
-          <Button>Submit New Milestone</Button>
-        </Link>
+        {onNewSubmission && (
+          <Button onClick={onNewSubmission}>Submit New Milestone</Button>
+        )}
       </div>
     </>
   );

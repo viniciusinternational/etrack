@@ -16,15 +16,20 @@ export default function SubmitMilestonePage() {
 
   const [open, setOpen] = useState(true);
 
-  const { data: project } = useContract(projectId);
+  const { data: project, isLoading } = useContract(projectId);
   const { mutateAsync: createSubmission, isPending } = useCreateSubmission();
 
   const handleSave = async (input: MilestoneSubmissionFormInput) => {
+    if (!project?.contractorId) {
+      toast.error("Project contractor information is missing");
+      return;
+    }
+
     try {
       await createSubmission({
         ...input,
         projectId,
-        contractorId: project?.contractorId,
+        contractorId: project.contractorId,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -42,6 +47,10 @@ export default function SubmitMilestonePage() {
     setOpen(false);
     router.push(`/contract/${projectId}/status`);
   };
+
+  if (isLoading) {
+    return null; // Or a loader component if you prefer, but Dialog usually handles content loading internally or we can wrap content
+  }
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
