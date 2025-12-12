@@ -171,10 +171,7 @@ export function getNavigationForPermissions(
 
   return navigationConfig
     .filter(item => {
-      // Dashboard is always available to authenticated users
-      if (item.id === 'dashboard') {
-        return true;
-      }
+
 
       // If no permissions required, show item (shouldn't happen but safety check)
       if (!item.permissions || item.permissions.length === 0) {
