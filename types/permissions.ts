@@ -49,6 +49,14 @@ export type PermissionKey =
   | 'export_project'
   | 'manage_project'
   
+  // Milestone Module
+  | 'create_milestone'
+  | 'view_milestone'
+  | 'edit_milestone'
+  | 'delete_milestone'
+  | 'approve_milestone'
+  | 'reject_milestone'
+  
   // Submission Module
   | 'create_submission'
   | 'view_submission'
@@ -190,6 +198,14 @@ export const ALL_PERMISSION_KEYS: PermissionKey[] = [
   'delete_project',
   'export_project',
   'manage_project',
+  
+  // Milestone
+  'create_milestone',
+  'view_milestone',
+  'edit_milestone',
+  'delete_milestone',
+  'approve_milestone',
+  'reject_milestone',
   
   // Submission
   'create_submission',

@@ -204,11 +204,13 @@ export default function SubmissionsListPage() {
                   ),
                 },
                 {
-                  accessorKey: "contractor.name",
+                  id: "contractor",
                   header: "Contractor",
-                  cell: ({ row }: { row: Row<MilestoneSubmission> }) => (
-                    <div className="text-sm">{row.original.contractor?.name || "Unknown Contractor"}</div>
-                  ),
+                  cell: ({ row }: { row: Row<MilestoneSubmission> }) => {
+                    const contractor = row.original.contractor;
+                    const name = contractor ? `${contractor.firstname} ${contractor.lastname}` : "Unknown Contractor";
+                    return <div className="text-sm">{name}</div>;
+                  },
                 },
                 {
                   accessorKey: "milestoneStage",

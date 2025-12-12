@@ -18,11 +18,14 @@ const createProjectSchema = z.object({
     .string()
     .optional()
     .transform((val) => (val === "" ? undefined : val)),
+  supervisorId: z
+    .string()
+    .optional()
+    .transform((val) => (val === "" ? undefined : val)),
   contractValue: z.number().positive("Contract value must be positive"),
   startDate: z.string(),
   endDate: z.string(),
   evidenceDocs: z.array(z.string()).optional().default([]),
-  plannedMilestones: z.any().optional(), // JSON array of milestone templates
 });
 
 export async function GET(request: NextRequest) {
@@ -79,7 +82,18 @@ export async function GET(request: NextRequest) {
         contractor: {
           select: {
             id: true,
-            name: true,
+            firstname: true,
+            lastname: true,
+            email: true,
+            role: true,
+            status: true,
+          },
+        },
+        supervisor: {
+          select: {
+            id: true,
+            firstname: true,
+            lastname: true,
             email: true,
             role: true,
             status: true,
@@ -94,7 +108,8 @@ export async function GET(request: NextRequest) {
     const projectsWithNames = projects.map((project) => ({
       ...project,
       supervisingMdaName: project.supervisingMda?.name,
-      contractorName: project.contractor?.name,
+      contractorName: project.contractor ? `${project.contractor.firstname} ${project.contractor.lastname}` : undefined,
+      supervisorName: project.supervisor ? `${project.supervisor.firstname} ${project.supervisor.lastname}` : undefined,
     }));
 
     return NextResponse.json({ ok: true, data: projectsWithNames });
@@ -160,12 +175,12 @@ export async function POST(request: NextRequest) {
         category: validatedData.category,
         supervisingMdaId: validatedData.supervisingMdaId || undefined,
         contractorId: validatedData.contractorId || undefined,
+        supervisorId: validatedData.supervisorId || undefined,
         contractValue: validatedData.contractValue,
         startDate,
         endDate,
         status: ProjectStatus.Planned,
         evidenceDocs: validatedData.evidenceDocs || [],
-        plannedMilestones: validatedData.plannedMilestones || null,
       },
     });
 

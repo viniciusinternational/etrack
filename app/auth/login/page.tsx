@@ -69,7 +69,8 @@ export default function LoginPage() {
         loginWithToken(
           {
             id: user.id,
-            name: user.name,
+            firstname: user.firstname,
+            lastname: user.lastname,
             email: user.email,
             role: user.role,
             mdaId: user.mdaId,

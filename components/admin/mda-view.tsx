@@ -218,8 +218,8 @@ export default function MdaViewClient({ id }: { id: string }) {
                   <SelectContent>
                     <SelectItem value="None">None</SelectItem>
                     {users.map((user) => (
-                      <SelectItem key={user.id} value={user.name}>
-                        {user.name}
+                      <SelectItem key={user.id} value={`${user.firstname} ${user.lastname}`}>
+                        {`${user.firstname} ${user.lastname}`}
                       </SelectItem>
                     ))}
                   </SelectContent>

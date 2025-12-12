@@ -36,7 +36,7 @@ export function DashboardRecentUsers({ stats }: DashboardRecentUsersProps) {
               <div className="flex-shrink-0 w-2 h-2 rounded-full bg-green-500 mt-2"></div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground">
-                  New user &quot;{user.name}&quot; created
+                  New user &quot;{`${user.firstname} ${user.lastname}`}&quot; created
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge

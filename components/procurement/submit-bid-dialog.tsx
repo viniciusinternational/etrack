@@ -119,7 +119,7 @@ export function SubmitBidDialog({ tenderId, trigger }: SubmitBidDialogProps) {
             >
               <option value="">Select a vendor...</option>
               {vendors.map(v => (
-                <option key={v.id} value={v.id}>{v.name}</option>
+                <option key={v.id} value={v.id}>{`${v.firstname} ${v.lastname}`}</option>
               ))}
             </select>
           </div>

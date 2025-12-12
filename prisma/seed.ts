@@ -167,7 +167,8 @@ async function main() {
 
   const adminUser = await prisma.user.create({
     data: {
-      name: "System Administrator",
+      firstname: "System",
+      lastname: "Administrator",
       email: "admin@etrack.gov",
       role: UserRole.SuperAdmin,
       password: adminPasswordHash,

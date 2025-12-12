@@ -67,13 +67,8 @@ export function AppSidebar() {
     router.push("/auth/login");
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
+  const getInitials = (firstname: string, lastname: string) => {
+    return `${firstname[0]}${lastname[0]}`.toUpperCase();
   };
 
   const isCollapsed = state === "collapsed" && !isMobile;
@@ -219,14 +214,14 @@ export function AppSidebar() {
           <div className="px-3 py-2 rounded-lg bg-sidebar-accent/20 border border-sidebar-border/50 mb-2">
             <div className="flex items-center gap-3">
               <Avatar className="h-8 w-8 border-2 border-sidebar-primary/30">
-                <AvatarImage src="" alt={user.name} />
+                <AvatarImage src="" alt={`${user.firstname} ${user.lastname}`} />
                 <AvatarFallback className="bg-gradient-to-br from-sidebar-primary via-sidebar-primary/90 to-sidebar-primary/70 text-sidebar-primary-foreground font-semibold text-xs">
-                  {getInitials(user.name)}
+                  {getInitials(user.firstname, user.lastname)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col min-w-0 flex-1">
                 <span className="text-sm font-semibold text-sidebar-foreground truncate">
-                  {user.name}
+                  {`${user.firstname} ${user.lastname}`}
                 </span>
                 <span className="text-xs text-sidebar-foreground/70 truncate">
                   {user.email}

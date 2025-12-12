@@ -18,12 +18,15 @@ const updateProjectSchema = z.object({
     .string()
     .optional()
     .transform((val) => (val === "" ? undefined : val)),
+  supervisorId: z
+    .string()
+    .optional()
+    .transform((val) => (val === "" ? undefined : val)),
   contractValue: z.number().positive().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   status: z.nativeEnum(ProjectStatus).optional(),
   evidenceDocs: z.array(z.string()).optional(),
-  plannedMilestones: z.any().optional(), // JSON array of milestone templates
 });
 
 export async function GET(
@@ -41,6 +44,7 @@ export async function GET(
         category: true,
         supervisingMdaId: true,
         contractorId: true,
+        supervisorId: true,
         contractValue: true,
         startDate: true,
         endDate: true,
@@ -60,7 +64,18 @@ export async function GET(
         contractor: {
           select: {
             id: true,
-            name: true,
+            firstname: true,
+            lastname: true,
+            email: true,
+            role: true,
+            status: true,
+          },
+        },
+        supervisor: {
+          select: {
+            id: true,
+            firstname: true,
+            lastname: true,
             email: true,
             role: true,
             status: true,
@@ -119,12 +134,6 @@ export async function PUT(
     }
     if (updateData.endDate && typeof updateData.endDate === "string") {
       updateData.endDate = new Date(updateData.endDate);
-    }
-    // Handle plannedMilestones - set to null if empty array, otherwise keep as is
-    if (validatedData.plannedMilestones !== undefined) {
-      updateData.plannedMilestones = Array.isArray(validatedData.plannedMilestones) && validatedData.plannedMilestones.length === 0
-        ? null
-        : validatedData.plannedMilestones;
     }
 
     const updatedProject = await prisma.project.update({

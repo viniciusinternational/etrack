@@ -32,7 +32,8 @@ export async function GET(
       select: {
         id: true,
         email: true,
-        name: true,
+        firstname: true,
+        lastname: true,
         permissions: true,
       },
     });
@@ -52,7 +53,7 @@ export async function GET(
       data: {
         userId: user.id,
         email: user.email,
-        name: user.name,
+        name: `${user.firstname} ${user.lastname}`,
         permissions,
       },
     });
@@ -135,7 +136,8 @@ export async function PATCH(
       select: {
         id: true,
         email: true,
-        name: true,
+        firstname: true,
+        lastname: true,
         permissions: true,
       },
     });
@@ -145,7 +147,7 @@ export async function PATCH(
       data: {
         userId: updatedUser.id,
         email: updatedUser.email,
-        name: updatedUser.name,
+        name: `${updatedUser.firstname} ${updatedUser.lastname}`,
         permissions: updatedUser.permissions || {},
       },
       message: 'User permissions updated successfully',
