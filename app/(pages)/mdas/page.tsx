@@ -34,6 +34,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { MDA } from "@/types";
 import { useMDAs, useCreateMDA } from "@/hooks/use-mdas";
 import { useUsers } from "@/hooks/use-users";
+import { toast } from "sonner";
 
 type MDAFormData = Omit<MDA, "id" | "createdAt" | "updatedAt">;
 
@@ -59,11 +60,14 @@ export default function MDAManagementPage() {
     address: "",
     isActive: true,
   });
-  const { data: mdasData } = useMDAs();
-  const { mutate: createMDA } = useCreateMDA();
+  const { data: mdasData, isLoading: isLoadingMdas, error: mdasError } = useMDAs();
+  const { mutate: createMDA, isPending: isCreating } = useCreateMDA();
   const { data: usersData } = useUsers();
   
-  const mdas = useMemo(() => mdasData || [], [mdasData]);
+  const mdas = useMemo(() => {
+    console.log('MDAs data:', mdasData);
+    return mdasData || [];
+  }, [mdasData]);
   const users = usersData || [];
 
   // Statistics
@@ -81,7 +85,7 @@ export default function MDAManagementPage() {
 
   // Filtered MDAs (category & status applied; GlobalTable handles text search)
   const filteredMdas = useMemo(() => {
-    return mdas.filter((mda) => {
+    const filtered = mdas.filter((mda) => {
       const matchesCategory =
         categoryFilter === "all" || mda.category === categoryFilter;
       const matchesStatus =
@@ -89,7 +93,67 @@ export default function MDAManagementPage() {
         (statusFilter === "active" ? mda.isActive : !mda.isActive);
       return matchesCategory && matchesStatus;
     });
+    console.log('Filtered MDAs:', filtered, 'categoryFilter:', categoryFilter, 'statusFilter:', statusFilter);
+    return filtered;
   }, [mdas, categoryFilter, statusFilter]);
+
+  // Memoize columns to prevent table reset on every render
+  const columns = useMemo<ColumnDef<MDA>[]>(() => [
+    {
+      accessorKey: "name",
+      header: "Name",
+      cell: ({ row }) => (
+        <div>
+          <div className="font-medium text-foreground">
+            {row.original.name}
+          </div>
+          {row.original.description && (
+            <div className="text-sm text-muted-foreground">
+              {row.original.description}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "category",
+      header: "Category",
+      cell: ({ row }) => (
+        <Badge
+          variant={getCategoryBadgeVariant(row.original.category)}
+        >
+          {row.original.category}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "headOfMda",
+      header: "Head of MDA",
+      cell: ({ row }) => (
+        <div className="text-sm">
+          {row.original.headOfMda || "-"}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "email",
+      header: "Email",
+      cell: ({ row }) => (
+        <div className="text-sm">{row.original.email || "-"}</div>
+      ),
+    },
+    {
+      accessorKey: "isActive",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge
+          variant={row.original.isActive ? "default" : "secondary"}
+        >
+          {row.original.isActive ? "Active" : "Inactive"}
+        </Badge>
+      ),
+    },
+  ], []);
 
   // Handlers
   const handleAddMda = () => {
@@ -101,6 +165,11 @@ export default function MDAManagementPage() {
       onSuccess: () => {
         setIsAddDialogOpen(false);
         resetForm();
+        toast.success("MDA created successfully");
+      },
+      onError: (error) => {
+        console.error("Error creating MDA:", error);
+        toast.error("Failed to create MDA");
       }
     });
   };
@@ -255,65 +324,7 @@ export default function MDAManagementPage() {
         <CardContent>
           <GlobalTable
             data={filteredMdas}
-            columns={(() => {
-              const cols: ColumnDef<MDA>[] = [
-                {
-                  accessorKey: "name",
-                  header: "Name",
-                  cell: ({ row }) => (
-                    <div>
-                      <div className="font-medium text-foreground">
-                        {row.original.name}
-                      </div>
-                      {row.original.description && (
-                        <div className="text-sm text-muted-foreground">
-                          {row.original.description}
-                        </div>
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  accessorKey: "category",
-                  header: "Category",
-                  cell: ({ row }) => (
-                    <Badge
-                      variant={getCategoryBadgeVariant(row.original.category)}
-                    >
-                      {row.original.category}
-                    </Badge>
-                  ),
-                },
-                {
-                  accessorKey: "headOfMda",
-                  header: "Head of MDA",
-                  cell: ({ row }) => (
-                    <div className="text-sm">
-                      {row.original.headOfMda || "-"}
-                    </div>
-                  ),
-                },
-                {
-                  accessorKey: "email",
-                  header: "Email",
-                  cell: ({ row }) => (
-                    <div className="text-sm">{row.original.email || "-"}</div>
-                  ),
-                },
-                {
-                  accessorKey: "isActive",
-                  header: "Status",
-                  cell: ({ row }) => (
-                    <Badge
-                      variant={row.original.isActive ? "default" : "secondary"}
-                    >
-                      {row.original.isActive ? "Active" : "Inactive"}
-                    </Badge>
-                  ),
-                },
-              ];
-              return cols;
-            })()}
+            columns={columns}
             title="MDAs"
             rowClickHref={(row) => `/mdas/${row.id}`}
           />
@@ -471,7 +482,9 @@ export default function MDAManagementPage() {
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddMda}>Create MDA</Button>
+            <Button onClick={handleAddMda} disabled={isCreating}>
+              {isCreating ? "Creating..." : "Create MDA"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

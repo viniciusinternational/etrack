@@ -33,7 +33,7 @@ export function useCreateMDA() {
       return data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["mdas"] });
+      queryClient.refetchQueries({ queryKey: ["mdas"] });
     },
   });
 }

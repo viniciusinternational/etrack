@@ -50,7 +50,6 @@ export async function GET(
         endDate: true,
         status: true,
         evidenceDocs: true,
-        plannedMilestones: true,
         createdAt: true,
         updatedAt: true,
         supervisingMda: {
@@ -81,7 +80,38 @@ export async function GET(
             status: true,
           },
         },
-        milestones: true,
+        milestones: {
+          select: {
+            id: true,
+            projectId: true,
+            contractorId: true,
+            milestoneStage: true,
+            percentComplete: true,
+            notes: true,
+            status: true,
+            evidenceDocs: true,
+            reviewedAt: true,
+            reviewedBy: true,
+            createdAt: true,
+            updatedAt: true,
+            contractor: {
+              select: {
+                id: true,
+                firstname: true,
+                lastname: true,
+                email: true,
+              },
+            },
+            reviewer: {
+              select: {
+                id: true,
+                firstname: true,
+                lastname: true,
+                email: true,
+              },
+            },
+          },
+        },
         expenditures: true,
       },
     });

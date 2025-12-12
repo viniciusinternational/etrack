@@ -61,6 +61,11 @@ export async function POST(request: NextRequest) {
 
     const newMda = await prisma.mDA.create({
       data: validatedData,
+      include: {
+        _count: {
+          select: { supervisedProjects: true, users: true },
+        },
+      },
     });
 
     try {
