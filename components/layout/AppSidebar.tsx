@@ -50,7 +50,7 @@ export function AppSidebar() {
 
   // Get filtered navigation items based on user permissions
   const navItems = useMemo(() => {
-    return getNavigationForPermissions(user);
+    return getNavigationForPermissions(user as any);
   }, [user]);
 
   const getBadgeCount = (href: string) => {
@@ -67,8 +67,10 @@ export function AppSidebar() {
     router.push("/auth/login");
   };
 
-  const getInitials = (firstname: string, lastname: string) => {
-    return `${firstname[0]}${lastname[0]}`.toUpperCase();
+  const getInitials = (firstname?: string, lastname?: string) => {
+    const f = firstname?.[0] || "";
+    const l = lastname?.[0] || "";
+    return `${f}${l}`.toUpperCase() || "U";
   };
 
   const isCollapsed = state === "collapsed" && !isMobile;

@@ -45,7 +45,7 @@ export function DashboardHeader({ user, onLogout }: DashboardHeaderProps) {
   };
 
   const getInitials = (firstname: string, lastname: string) => {
-    return `${firstname[0]}${lastname[0]}`.toUpperCase();
+    return `${firstname?.[0] || ""}${lastname?.[0] || ""}`.toUpperCase() || "U";
   };
 
   return (

@@ -119,7 +119,7 @@ export default function UserViewClient({ id }: { id: string }) {
             <div>
               <div className="text-sm text-muted-foreground">MDA</div>
               <div className="font-medium">
-                {(user as User & Record<string, unknown>).mdaName || "-"}
+                {user.mdaName || "-"}
               </div>
             </div>
             <div>
@@ -135,17 +135,15 @@ export default function UserViewClient({ id }: { id: string }) {
             <div>
               <div className="text-sm text-muted-foreground">Last Login</div>
               <div className="font-medium">
-                {(user as User & Record<string, unknown>).lastLogin
-                  ? new Date(
-                      (user as User & Record<string, unknown>).lastLogin as Date
-                    ).toLocaleDateString()
+                {user.lastLogin
+                  ? new Date(user.lastLogin).toLocaleDateString()
                   : "Never"}
               </div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Password Status</div>
               <div className="font-medium flex items-center gap-2">
-                {(user as User & Record<string, unknown>).mustChangePassword ? (
+                {user.mustChangePassword ? (
                   <>
                     <XCircle className="h-4 w-4 text-destructive" />
                     <span className="text-destructive">Must Change</span>
@@ -158,13 +156,11 @@ export default function UserViewClient({ id }: { id: string }) {
                 )}
               </div>
             </div>
-            {(user as User & Record<string, unknown>).passwordChangedAt && (
+            {user.passwordChangedAt && (
               <div>
                 <div className="text-sm text-muted-foreground">Password Changed</div>
                 <div className="font-medium">
-                  {new Date(
-                    (user as User & Record<string, unknown>).passwordChangedAt as Date
-                  ).toLocaleDateString()}
+                  {new Date(user.passwordChangedAt).toLocaleDateString()}
                 </div>
               </div>
             )}

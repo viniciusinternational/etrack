@@ -290,7 +290,7 @@ export default function UserManagementPage() {
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
                           <AvatarFallback className="bg-primary text-primary-foreground font-medium">
-                            {`${row.original.firstname[0]}${row.original.lastname[0]}`.toUpperCase()}
+                            {`${row.original.firstname?.[0] || ""}${row.original.lastname?.[0] || ""}`.toUpperCase() || "U"}
                           </AvatarFallback>
                         </Avatar>
                         <div>
