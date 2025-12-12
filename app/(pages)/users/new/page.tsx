@@ -222,7 +222,7 @@ export default function NewUserPage() {
   const selectedPermissionsCount = Object.values(permissions).filter(v => v === true).length;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted/40 p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
@@ -246,13 +246,13 @@ export default function NewUserPage() {
         <div className="space-y-6">
           {/* User Information */}
           <Card className="border-gray-200 shadow-sm">
-            <CardHeader className="bg-white border-b border-gray-100">
-              <CardTitle className="text-gray-900">User Information</CardTitle>
-              <CardDescription className="text-gray-600">
+            <CardHeader className="bg-card border-b border-border">
+              <CardTitle className="text-foreground">User Information</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Enter the user's basic details, role, and organization
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6 pt-6 bg-white">
+            <CardContent className="space-y-6 pt-6 bg-card">
               {/* Basic Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -354,13 +354,13 @@ export default function NewUserPage() {
 
           {/* Account Settings */}
           <Card className="border-gray-200 shadow-sm">
-            <CardHeader className="bg-white border-b border-gray-100">
-              <CardTitle className="text-gray-900">Account Settings</CardTitle>
-              <CardDescription className="text-gray-600">
+            <CardHeader className="bg-card border-b border-border">
+              <CardTitle className="text-foreground">Account Settings</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Configure account status and password options
               </CardDescription>
             </CardHeader>
-            <CardContent className="pt-6 bg-white">
+            <CardContent className="pt-6 bg-card">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Account Status */}
                 <div className="space-y-3">
@@ -427,7 +427,7 @@ export default function NewUserPage() {
                           id="generated-password"
                           value={generatedPassword}
                           readOnly
-                          className="font-mono bg-gray-50 pr-10"
+                          className="font-mono bg-muted pr-10"
                         />
                         <Button
                           type="button"
@@ -444,7 +444,7 @@ export default function NewUserPage() {
                           <Copy className="h-4 w-4 text-gray-600" />
                         </Button>
                       </div>
-                      <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded-md border border-amber-200">
+                      <p className="text-xs text-accent-foreground bg-accent/20 p-2 rounded-md border border-accent/40">
                         ⚠️ Save this password securely. User must change it on next login.
                       </p>
                     </div>
@@ -456,27 +456,27 @@ export default function NewUserPage() {
 
           {/* Permissions */}
           <Card className="border-gray-200 shadow-sm">
-            <CardHeader className="bg-white border-b border-gray-100">
-              <CardTitle className="text-gray-900 flex items-center justify-between">
+            <CardHeader className="bg-card border-b border-border">
+              <CardTitle className="text-foreground flex items-center justify-between">
                 <span>Permissions</span>
                 {selectedPermissionsCount > 0 && (
-                  <span className="text-sm font-normal text-blue-600">
+                  <span className="text-sm font-normal text-primary">
                     {selectedPermissionsCount} selected
                   </span>
                 )}
               </CardTitle>
-              <CardDescription className="text-gray-600">
+              <CardDescription className="text-muted-foreground">
                 {suggestedPermissions.length > 0 
                   ? `${suggestedPermissions.length} suggested permissions for ${formData.role} role have been pre-selected. You can modify them as needed.`
                   : "Assign specific permissions to this user (optional)"}
               </CardDescription>
             </CardHeader>
-            <CardContent className="pt-6 bg-white">
+            <CardContent className="pt-6 bg-card">
               {suggestedPermissions.length > 0 && (
                 <div className="mb-4 space-y-2">
-                  <Alert className="bg-blue-50 border-blue-200">
-                    <CheckCircle2 className="h-4 w-4 text-blue-600" />
-                    <AlertDescription className="text-blue-800 flex items-center justify-between w-full">
+                  <Alert className="bg-secondary/10 border-secondary/20">
+                    <CheckCircle2 className="h-4 w-4 text-secondary" />
+                    <AlertDescription className="text-secondary flex items-center justify-between w-full">
                       <span>
                         <span className="font-medium">Auto-applied permissions</span> based on the {formData.role} role. Review and adjust below.
                       </span>
@@ -484,7 +484,7 @@ export default function NewUserPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => setShowPermissionList(!showPermissionList)}
-                        className="h-6 w-6 p-0 hover:bg-blue-100 text-blue-700"
+                        className="h-6 w-6 p-0 hover:bg-secondary/20 text-secondary"
                         title={showPermissionList ? "Hide permissions list" : "Show permissions list"}
                       >
                         {showPermissionList ? (
@@ -497,12 +497,12 @@ export default function NewUserPage() {
                   </Alert>
                   
                   {showPermissionList && (
-                    <div className="bg-blue-50/50 border border-blue-100 rounded-md p-3 text-sm animate-in fade-in slide-in-from-top-1 duration-200">
-                      <p className="font-medium text-blue-800 mb-2">Auto-selected permissions:</p>
+                    <div className="bg-secondary/5 border border-secondary/10 rounded-md p-3 text-sm animate-in fade-in slide-in-from-top-1 duration-200">
+                      <p className="font-medium text-secondary mb-2">Auto-selected permissions:</p>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                         {suggestedPermissions.map((perm) => (
-                          <div key={perm} className="flex items-center gap-2 text-blue-700 bg-white/50 px-2 py-1 rounded border border-blue-100 text-xs">
-                            <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                          <div key={perm} className="flex items-center gap-2 text-secondary bg-background px-2 py-1 rounded border border-secondary/20 text-xs font-medium">
+                            <div className="h-1.5 w-1.5 rounded-full bg-secondary" />
                             {formatPermissionName(perm)}
                           </div>
                         ))}

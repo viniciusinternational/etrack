@@ -180,7 +180,7 @@ export function PermissionsEditor({
         />
       </div>
 
-      <div className="space-y-2 max-h-[500px] overflow-y-auto border rounded-lg p-4">
+      <div className="space-y-1 max-h-[500px] overflow-y-auto border border-border rounded-lg p-2 bg-background">
         {Object.entries(filteredModules)
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([module, perms]) => {
@@ -190,10 +190,24 @@ export function PermissionsEditor({
             const someSelected = selectedCount > 0 && selectedCount < perms.length;
 
             return (
-              <Card key={module} className="overflow-hidden">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+              <div key={module} className="border border-border rounded-md bg-card mb-2 last:mb-0 transition-all hover:bg-accent/5">
+                <div 
+                  className="flex items-center justify-between p-3 cursor-pointer select-none"
+                  onClick={() => toggleModule(module)}
+                >
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 hover:bg-transparent"
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <Checkbox
                         checked={allSelected}
                         ref={(el) => {
@@ -204,29 +218,19 @@ export function PermissionsEditor({
                         onCheckedChange={() => selectAllInModule(module)}
                         disabled={disabled}
                       />
-                      <CardTitle className="text-base">{formatModuleName(module)}</CardTitle>
-                      <Badge variant="secondary" className="text-xs">
-                        {selectedCount}/{perms.length}
-                      </Badge>
+                      <span className="font-semibold text-foreground">{formatModuleName(module)}</span>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleModule(module)}
-                      className="h-8 w-8 p-0"
-                      disabled={disabled}
-                    >
-                      {isExpanded ? (
-                        <ChevronUp className="h-4 w-4" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4" />
-                      )}
-                    </Button>
+                    {selectedCount > 0 && (
+                       <Badge variant="secondary" className="text-xs bg-secondary/10 text-secondary hover:bg-secondary/20 border-secondary/20">
+                         {selectedCount} selected
+                       </Badge>
+                    )}
                   </div>
-                </CardHeader>
+                </div>
+                
                 {isExpanded && (
-                  <CardContent className="pt-0">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                  <div className="px-3 pb-3 pt-0 animate-in slide-in-from-top-2 duration-200">
+                    <div className="pl-11 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {perms.map((permissionKey) => {
                         const action = getActionFromPermissionKey(permissionKey);
                         const isSelected = permissions[permissionKey] === true;
@@ -234,38 +238,36 @@ export function PermissionsEditor({
                         return (
                           <div
                             key={permissionKey}
-                            className="flex items-start gap-2 p-2 rounded-md hover:bg-accent/50"
+                            className={`flex items-center gap-2 p-2 rounded-md border transition-colors ${
+                              isSelected 
+                                ? "bg-primary/5 border-primary/20" 
+                                : "bg-background border-border hover:bg-muted/50"
+                            }`}
                           >
                             <Checkbox
                               id={`perm-${permissionKey}`}
                               checked={isSelected}
                               onCheckedChange={() => togglePermission(permissionKey)}
                               disabled={disabled}
-                              className="mt-1"
                             />
-                            <div className="flex-1 min-w-0">
-                              <Label
-                                htmlFor={`perm-${permissionKey}`}
-                                className="flex items-center gap-2 cursor-pointer flex-wrap"
-                              >
-                                <Badge variant={getActionBadgeVariant(action)} className="text-xs">
-                                  {formatActionName(action)}
-                                </Badge>
-                                <span className="text-sm font-medium truncate">
-                                  {permissionKey}
-                                </span>
-                              </Label>
-                              <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                                {formatActionName(action)} {formatModuleName(module)}
-                              </p>
-                            </div>
+                            <Label
+                              htmlFor={`perm-${permissionKey}`}
+                              className="flex items-center gap-2 cursor-pointer w-full"
+                            >
+                              <Badge variant={getActionBadgeVariant(action)} className="text-[10px] px-1.5 h-5 capitalize">
+                                {action}
+                              </Badge>
+                              <span className={`text-sm ${isSelected ? "text-primary font-medium" : "text-muted-foreground"}`}>
+                                {permissionKey.split('_').slice(1).join(' ')}
+                              </span>
+                            </Label>
                           </div>
                         );
                       })}
                     </div>
-                  </CardContent>
+                  </div>
                 )}
-              </Card>
+              </div>
             );
           })}
       </div>
