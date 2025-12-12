@@ -86,19 +86,14 @@ export default function SubmissionsListPage() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">
-            Contractor Submissions
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Review and manage contractor milestone submissions
-          </p>
-        </div>
-        <Link href="/submissions/add">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" /> New Submission
-          </Button>
-        </Link>
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">
+          Contractor Submissions
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          Review and manage contractor milestone submissions
+        </p>
+      </div>
       </div>
 
       {/* Statistics Cards */}

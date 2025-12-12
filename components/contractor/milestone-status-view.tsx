@@ -34,12 +34,14 @@ export function MilestoneStatusView({
   projectTitle,
   onBack,
   onNewSubmission,
+  onEditMilestone,
 }: {
   projectId: string;
   submissions: MilestoneSubmission[];
   projectTitle?: string;
   onBack: () => void;
   onNewSubmission?: () => void;
+  onEditMilestone?: (milestone: MilestoneSubmission) => void;
 }) {
   const projectSubmissions = submissions.filter(
     (s) => s.projectId === projectId
@@ -204,12 +206,15 @@ export function MilestoneStatusView({
                             <Badge variant="secondary">
                               {submission.evidenceDocs.length}
                             </Badge>
-                            {submission.status === SubmissionStatus.Pending && (
-                                <Link href={`/contract/submission/${submission.id}/edit`}>
-                                    <Button variant="ghost" size="icon" title="Edit Submission">
-                                        <Edit className="h-4 w-4" />
-                                    </Button>
-                                </Link>
+                            {submission.status === SubmissionStatus.Pending && onEditMilestone && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                title="Edit Submission"
+                                onClick={() => onEditMilestone(submission)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
                             )}
                           </div>
                         </TableCell>

@@ -23,9 +23,9 @@ export default function SubmissionDetailPage() {
   const { mutate: updateSubmission, isPending: isUpdating } = useUpdateSubmission();
 
   // Check permissions
-  const canApprove = hasPermission(user, 'approve_submission');
-  const canReject = hasPermission(user, 'reject_submission');
-  const canEdit = hasPermission(user, 'edit_submission');
+  const canApprove = hasPermission(user as any, 'approve_submission');
+  const canReject = hasPermission(user as any, 'reject_submission');
+  const canEdit = hasPermission(user as any, 'edit_submission');
 
   const handleStatusUpdate = (status: SubmissionStatus) => {
     if (!submission) return;
@@ -70,14 +70,12 @@ export default function SubmissionDetailPage() {
             </p>
           </div>
         </div>
-        {canEdit && (
-          <Link href={`/submissions/${id}/edit`}>
-            <Button variant="outline">
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Submission
-            </Button>
-          </Link>
-        )}
+        <Link href={submission.project?.id ? `/projects/${submission.project.id}` : '#'}>
+          <Button variant="outline">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            View in Project
+          </Button>
+        </Link>
       </div>
 
       {/* Card */}
