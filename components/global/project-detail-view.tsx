@@ -9,6 +9,8 @@ import {
   CheckCircle,
   AlertCircle,
   Plus,
+  Check,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,11 +42,17 @@ export function ProjectDetailView({
   milestones,
   onBack,
   onEdit,
+  onEditMilestone,
+  onApproveMilestone,
+  onRejectMilestone,
 }: {
   project: Project;
   milestones: MilestoneSubmission[];
   onBack: () => void;
   onEdit: () => void;
+  onEditMilestone?: (milestone: MilestoneSubmission) => void;
+  onApproveMilestone?: (milestone: MilestoneSubmission) => void;
+  onRejectMilestone?: (milestone: MilestoneSubmission) => void;
 }) {
   const permissions = useProjectPermissions();
   const getStatusIcon = (status: ProjectStatus) => {
@@ -324,22 +332,55 @@ export function ProjectDetailView({
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {getMilestoneStageLabel(milestone.milestoneStage)}
-                          </h3>
-                          <Badge
-                            variant="secondary"
-                            className={
-                              milestone.status === SubmissionStatus.Approved
-                                ? "bg-green-100 text-green-800"
-                                : milestone.status === SubmissionStatus.Pending
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
-                            }
-                          >
-                            {milestone.status}
-                          </Badge>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <h3 className="text-lg font-semibold text-gray-900">
+                              {getMilestoneStageLabel(milestone.milestoneStage)}
+                            </h3>
+                            <Badge
+                              variant="secondary"
+                              className={
+                                milestone.status === SubmissionStatus.Approved
+                                  ? "bg-green-100 text-green-800"
+                                  : milestone.status === SubmissionStatus.Pending
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-red-100 text-red-800"
+                              }
+                            >
+                              {milestone.status}
+                            </Badge>
+                          </div>
+                          {onEditMilestone && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => onEditMilestone(milestone)}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </Button>
+                          )}
+                          {milestone.status === SubmissionStatus.Pending && onApproveMilestone && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => onApproveMilestone(milestone)}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <Check className="h-4 w-4 mr-2" />
+                              Approve
+                            </Button>
+                          )}
+                          {milestone.status === SubmissionStatus.Pending && onRejectMilestone && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => onRejectMilestone(milestone)}
+                            >
+                              <X className="h-4 w-4 mr-2" />
+                              Reject
+                            </Button>
+                          )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 mb-4">

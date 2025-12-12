@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Upload, FileText, X, Loader2 } from "lucide-react";
 import {
   Dialog,
@@ -40,6 +40,8 @@ interface AddMilestoneModalProps {
   contractorId: string;
   onSave: (data: MilestoneSubmissionFormInput) => Promise<void>;
   isSubmitting?: boolean;
+  milestone?: MilestoneSubmission; // If provided, modal is in edit mode
+  userRole?: string; // User's role to determine field access
 }
 
 export function AddMilestoneModal({
@@ -50,16 +52,34 @@ export function AddMilestoneModal({
   contractorId,
   onSave,
   isSubmitting = false,
+  milestone,
+  userRole = "Contractor",
 }: AddMilestoneModalProps) {
+  const isEditMode = !!milestone;
+  const isContractor = userRole === "Contractor";
   const { mutateAsync: uploadFile, isPending: isUploading } = useUpload();
-  const [evidenceDocs, setEvidenceDocs] = useState<string[]>([]);
+  const [evidenceDocs, setEvidenceDocs] = useState<string[]>(milestone?.evidenceDocs || []);
   const [formData, setFormData] = useState({
-    milestoneStage: "",
-    percentComplete: 0,
-    notes: "",
+    milestoneStage: milestone?.milestoneStage || "",
+    percentComplete: milestone?.percentComplete || 0,
+    notes: milestone?.notes || "",
     latitude: "",
     longitude: "",
   });
+
+  // Update form data when milestone changes (for editing different milestones)
+  useEffect(() => {
+    if (milestone) {
+      setFormData({
+        milestoneStage: milestone.milestoneStage || "",
+        percentComplete: milestone.percentComplete || 0,
+        notes: milestone.notes || "",
+        latitude: "",
+        longitude: "",
+      });
+      setEvidenceDocs(milestone.evidenceDocs || []);
+    }
+  }, [milestone]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -111,7 +131,7 @@ export function AddMilestoneModal({
 
         evidenceDocs: evidenceDocs,
 
-        status: SubmissionStatus.Pending,
+        status: SubmissionStatus.Pending, // Default to Pending, parent will override based on role
 
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -151,9 +171,14 @@ export function AddMilestoneModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Milestone Submission</DialogTitle>
+          <DialogTitle>{isEditMode ? "Edit" : "Add"} Milestone Submission</DialogTitle>
           <DialogDescription>
-            Submit a new milestone for {project.title}
+            {isEditMode ? "Update milestone for" : "Submit a new milestone for"} {project.title}
+            {isContractor && isEditMode && (
+              <span className="block mt-2 text-sm text-muted-foreground">
+                Note: You can only add/remove documents. Contact supervisor to update progress.
+              </span>
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -167,7 +192,7 @@ export function AddMilestoneModal({
               onValueChange={(value) =>
                 setFormData((prev) => ({ ...prev, milestoneStage: value }))
               }
-              disabled={isSubmitting}
+              disabled={isSubmitting || (isEditMode && isContractor)}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select milestone stage" />
@@ -194,7 +219,7 @@ export function AddMilestoneModal({
               max={100}
               step={1}
               className="w-full"
-              disabled={isSubmitting}
+              disabled={isSubmitting || (isEditMode && isContractor)}
             />
           </div>
 
@@ -208,7 +233,7 @@ export function AddMilestoneModal({
               }
               rows={3}
               placeholder="Add any notes about this milestone..."
-              disabled={isSubmitting}
+              disabled={isSubmitting || (isEditMode && isContractor)}
             />
           </div>
 
@@ -272,7 +297,7 @@ export function AddMilestoneModal({
                 {evidenceDocs.map((doc, docIndex) => (
                   <div
                     key={docIndex}
-                    className="flex items-center justify-between text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded"
+                    className="flex items-center justify-between text-sm bg-primary/10 border border-primary/20 p-2 rounded"
                   >
                     <span className="flex items-center gap-2 truncate">
                       <FileText className="h-4 w-4 flex-shrink-0" />
@@ -306,10 +331,10 @@ export function AddMilestoneModal({
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Submitting...
+                  {isEditMode ? "Updating..." : "Submitting..."}
                 </>
               ) : (
-                "Submit Milestone"
+                isEditMode ? "Update Milestone" : "Submit Milestone"
               )}
             </Button>
           </DialogFooter>

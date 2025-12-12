@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { createAuditLog, getUserInfoFromHeaders } from "@/lib/audit-logger";
-import { SubmissionStatus } from "@prisma/client";
+import { SubmissionStatus, ProjectStatus } from "@prisma/client";
 import { requireAuth } from "@/lib/api-permissions";
 
 const updateSubmissionSchema = z.object({
@@ -117,6 +117,24 @@ export async function PUT(
       if (editAuthResult instanceof NextResponse) {
         return editAuthResult;
       }
+
+      // Role-based field restrictions for non-status updates
+      const userRole = user.role;
+      
+      if (userRole === "Contractor") {
+        // Contractors can ONLY update evidenceDocs
+        if (
+          validatedData.percentComplete !== undefined ||
+          validatedData.notes !== undefined ||
+          validatedData.geoTag !== undefined
+        ) {
+          return NextResponse.json(
+            { ok: false, error: "Contractors can only add/remove documents. Contact supervisor to update progress or notes." },
+            { status: 403 }
+          );
+        }
+      }
+      // Supervisors, ProjectManagers, and SuperAdmins can update all fields (except status which is handled above)
     }
 
     // If status is changing to Approved/Rejected, set reviewedAt and reviewedBy
@@ -137,6 +155,25 @@ export async function PUT(
     const updatedSubmission = await prisma.milestoneSubmission.update({
       where: { id },
       data: { ...validatedData, ...extraUpdates },
+      include: {
+        project: true,
+        contractor: {
+          select: {
+            id: true,
+            firstname: true,
+            lastname: true,
+            email: true,
+          },
+        },
+        reviewer: {
+          select: {
+            id: true,
+            firstname: true,
+            lastname: true,
+            email: true,
+          },
+        },
+      },
     });
 
     try {
