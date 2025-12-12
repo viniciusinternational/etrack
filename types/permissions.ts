@@ -34,6 +34,7 @@ export type PermissionKey =
   | 'delete_user'
   | 'export_user'
   
+  
   // MDA Module
   | 'create_mda'
   | 'view_mda'
@@ -148,7 +149,9 @@ export type PermissionKey =
   | 'view_contract'
   | 'edit_contract'
   | 'delete_contract'
-  | 'export_contract';
+  | 'export_contract'
+  | 'manage_permissions'
+  ;
 
 /**
  * Permission record type - maps permission keys to boolean values
@@ -291,6 +294,7 @@ export const ALL_PERMISSION_KEYS: PermissionKey[] = [
   'edit_contract',
   'delete_contract',
   'export_contract',
+  'manage_permissions',
 ] as const;
 
 /**

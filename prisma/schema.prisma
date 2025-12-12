@@ -526,6 +526,17 @@ model AuditLog {
   @@index([actionType])
 }
 
+model RolePermissionTemplate {
+  id          String   @id @default(cuid())
+  role        UserRole @unique
+  permissions Json     // Array of permission keys: ["view_user", "create_user", ...]
+  description String?  // Optional: Description of what this role typically does
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([role])
+}
+
 // =====================================================
 // PERMISSIONS
 // =====================================================

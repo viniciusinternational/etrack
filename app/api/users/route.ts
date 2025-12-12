@@ -16,8 +16,8 @@ const createUserSchema = z.object({
     .transform((val) => (val === "" ? undefined : val)),
   password: z.string().optional(),
   status: z.string().optional().default("active"),
-  permissionIds: z.array(z.string()).optional(),
   generatePassword: z.boolean().optional().default(false),
+  mustChangePassword: z.boolean().optional().default(false),
 });
 
 export async function GET(request: NextRequest) {
@@ -85,11 +85,12 @@ export async function POST(request: NextRequest) {
 
     // Handle password generation
     let passwordHash: string | undefined;
-    let mustChangePassword = false;
+    let mustChangePassword = validatedData.mustChangePassword;
+    let finalGeneratedPassword: string | undefined;
     
     if (validatedData.generatePassword) {
-      const generatedPassword = generatePassword();
-      passwordHash = hashPassword(generatedPassword);
+      finalGeneratedPassword = generatePassword();
+      passwordHash = hashPassword(finalGeneratedPassword);
       mustChangePassword = true;
     } else if (validatedData.password) {
       passwordHash = hashPassword(validatedData.password);
@@ -119,29 +120,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Assign permissions if provided
-    if (validatedData.permissionIds && validatedData.permissionIds.length > 0) {
-      // Verify all permission IDs exist
-      const permissions = await prisma.permission.findMany({
-        where: {
-          id: { in: validatedData.permissionIds },
-        },
-      });
-
-      if (permissions.length > 0) {
-        await prisma.userPermission.createMany({
-          data: permissions.map((p) => ({
-            userId: newUser.id,
-            permissionId: p.id,
-          })),
-          skipDuplicates: true,
-        });
-      }
-    }
-
+    // Assign permissions if provided - REMOVED because Permission model does not exist
+    // Permissions are handled via JSON field on User model and separate update call
+    
     try {
       const headersList = request.headers;
-      const { userSnapshot } = getUserInfoFromHeaders(headersList);
+      const { userSnapshot, userId } = getUserInfoFromHeaders(headersList);
       const ip = headersList.get("x-forwarded-for") ?? undefined;
 
       await createAuditLog({
@@ -162,7 +146,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       ok: true, 
       data: newUser,
-      generatedPassword: validatedData.generatePassword ? generatePassword() : undefined,
+      generatedPassword: finalGeneratedPassword,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

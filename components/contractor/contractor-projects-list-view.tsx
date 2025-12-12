@@ -14,6 +14,8 @@ import { Progress } from "@/components/ui/progress";
 import type { MilestoneSubmission, Project } from "@/types";
 import { formatDate } from "@/components/contractor/utils";
 import numeral from "numeral";
+import { Badge } from "../ui/badge";
+import { getCategoryColor, getStatusColor } from "../projects-manager/utils";
 
 export function ContractorProjectsListView({
   projects,
@@ -120,50 +122,89 @@ export function ContractorProjectsListView({
           <GlobalTable
             data={projects}
             columns={(() => {
-              const cols: ColumnDef<Project>[] = [
-                {
-                  accessorKey: "title",
-                  header: "Project Title",
-                  cell: ({ row }) => (
-                    <div className="font-medium max-w-[200px]">
-                      {row.original.title}
-                    </div>
-                  ),
-                },
-                {
-                  accessorKey: "contractValue",
-                  header: "Contract Value",
-                  cell: ({ row }) => (
-                    <div className="font-semibold">
-                      {formatCompactNumber(row.original.contractValue)}
-                    </div>
-                  ),
-                },
-                {
-                  id: "progress",
-                  header: "Progress",
-                  cell: ({ row }) => {
-                    const progress = getProjectProgress(row.original.id);
-                    return (
-                      <div className="flex items-center gap-2">
-                        <Progress value={progress} className="w-20" />
-                        <span className="text-xs font-medium">{progress}%</span>
-                      </div>
-                    );
-                  },
-                },
-                {
-                  accessorKey: "endDate",
-                  header: "End Date",
-                  cell: ({ row }) => (
-                    <div className="text-sm">
-                      {formatDate(row.original.endDate)}
-                    </div>
-                  ),
-                },
-              ];
-              return cols;
-            })()}
+  const cols: ColumnDef<Project>[] = [
+    {
+      accessorKey: "title",
+      header: "Project",
+      cell: ({ row }) => (
+        <div className="max-w-[220px]">
+          <div className="font-medium text-foreground truncate">
+            {row.original.title}
+          </div>
+          <div className="text-sm text-muted-foreground truncate">
+            {row.original.description}
+          </div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "category",
+      header: "Category",
+      cell: ({ row }) => (
+        <Badge
+          variant="secondary"
+          className={getCategoryColor(row.original.category)}
+        >
+          {row.original.category}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "supervisingMda.name",
+      header: "MDA",
+      cell: ({ row }) => (
+        <div className="text-sm truncate max-w-[160px]">
+          {row.original.supervisingMda?.name || "N/A"}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "contractor.name",
+      header: "Contractor",
+      cell: ({ row }) => (
+        <div className="text-sm truncate max-w-[160px]">
+          {row.original.contractor?.name || "N/A"}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "contractValue",
+      header: "Value",
+      cell: ({ row }) => (
+        <div className="text-sm font-medium">
+          ₦{numeral(row.original.contractValue).format("0.0a").toUpperCase()}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge
+          variant="secondary"
+          className={getStatusColor(row.original.status)}
+        >
+          {row.original.status}
+        </Badge>
+      ),
+    },
+    {
+      id: "timeline",
+      header: "Timeline",
+      cell: ({ row }) => {
+        const start = row.original.startDate;
+        const end = row.original.endDate;
+        return (
+          <div className="text-sm text-muted-foreground whitespace-nowrap">
+            {formatDate(start)} – {formatDate(end)}
+          </div>
+        );
+      },
+    },
+  ];
+  return cols;
+})()}
+
             title="Projects"
             rowClickHref={(row) => `/contract/${row.id}/status`}
           />

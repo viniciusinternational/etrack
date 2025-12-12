@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, CheckCircle2, Copy, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,13 +22,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { UserRole, type UserFormData } from "@/types";
-import { useCreateUser, useUpdateUserPermissionsJSON } from "@/hooks/use-users";
-import { useMDAs } from "@/hooks/use-mdas";
-import { PermissionsEditor } from "@/components/user/permissions-editor";
-import type { PartialUserPermissions } from "@/types/permissions";
-import { useAuthGuard } from "@/hooks/use-auth-guard";
-import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -37,10 +30,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { UserRole, type UserFormData } from "@/types";
+import { useCreateUser, useUpdateUserPermissionsJSON } from "@/hooks/use-users";
+import { useMDAs } from "@/hooks/use-mdas";
+import { PermissionsEditor } from "@/components/user/permissions-editor";
+import type { PartialUserPermissions } from "@/types/permissions";
+import { useAuthGuard } from "@/hooks/use-auth-guard";
+import { useAuthStore } from "@/store/auth-store";
+import { toast } from "sonner";
 
 export default function NewUserPage() {
   const { isChecking } = useAuthGuard(["create_user"]);
   const router = useRouter();
+  const currentUser = useAuthStore((state) => state.user);
   const { data: mdasData } = useMDAs();
   const { mutate: createUser, isPending: isCreating } = useCreateUser();
   const { mutate: updatePermissions, isPending: isUpdatingPermissions } =
@@ -57,8 +60,85 @@ export default function NewUserPage() {
   });
   const [generatePassword, setGeneratePassword] = useState(false);
   const [permissions, setPermissions] = useState<PartialUserPermissions>({});
+  const [suggestedPermissions, setSuggestedPermissions] = useState<string[]>([]);
+  const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [showPermissionList, setShowPermissionList] = useState(false);
+  const [createdUserId, setCreatedUserId] = useState<string | null>(null);
+
+  // Helper to format permission names
+  const formatPermissionName = (perm: string) => {
+    return perm.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
+
+  // Handle password generation
+  useEffect(() => {
+    if (generatePassword) {
+      // Generate a random password on client side so user can see it immediately
+      const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+      let retVal = "";
+      for (let i = 0, n = charset.length; i < 12; ++i) {
+          retVal += charset.charAt(Math.floor(Math.random() * n));
+      }
+      setGeneratedPassword(retVal);
+    } else {
+      setGeneratedPassword(null);
+    }
+  }, [generatePassword]);
+
+  // Load suggested permissions when role changes
+  useEffect(() => {
+    const loadRolePermissions = async () => {
+      if (!formData.role || !currentUser?.id) return;
+      
+      setIsLoadingTemplate(true);
+      try {
+        // Fetch role permission template from your API with authentication
+        const response = await fetch(`/api/role-permission-templates?role=${formData.role}`, {
+          headers: {
+            'x-user-id': currentUser.id,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.ok && data.data && data.data.permissions) {
+            const templatePermissions = Array.isArray(data.data.permissions) 
+              ? data.data.permissions 
+              : [];
+            
+            setSuggestedPermissions(templatePermissions);
+            
+            // Auto-apply suggested permissions
+            const newPermissions: PartialUserPermissions = {};
+            templatePermissions.forEach((perm: string) => {
+              // Type assertion to ensure perm is treated as a valid key
+              newPermissions[perm as keyof PartialUserPermissions] = true;
+            });
+            setPermissions(newPermissions);
+            
+            if (templatePermissions.length > 0) {
+              toast.success(`Applied ${templatePermissions.length} suggested permissions for ${formData.role}`);
+            }
+          } else {
+            setSuggestedPermissions([]);
+            setPermissions({});
+          }
+        } else {
+          console.warn("No permission template found for role:", formData.role);
+          setSuggestedPermissions([]);
+        }
+      } catch (error) {
+        console.error("Failed to load role permissions:", error);
+        toast.error("Could not load suggested permissions for this role");
+        setSuggestedPermissions([]);
+      } finally {
+        setIsLoadingTemplate(false);
+      }
+    };
+
+    loadRolePermissions();
+  }, [formData.role, currentUser?.id]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,20 +154,24 @@ export default function NewUserPage() {
       role: formData.role,
       mdaId: formData.mdaId,
       status: formData.status,
-      generatePassword,
+      // If we generated a password client-side, send it as the password
+      password: generatePassword ? generatedPassword : undefined,
+      // We handle generation client-side now, so tell backend NOT to generate
+      generatePassword: false, 
+      // But we still want to enforce password change
+      mustChangePassword: generatePassword,
     };
 
     createUser(newUser, {
       onSuccess: async (data: any) => {
         setCreatedUserId(data.id);
         
-        // If password was generated, show it in a dialog
-        if (generatePassword && data?.generatedPassword) {
-          setGeneratedPassword(data.generatedPassword);
+        // Show dialog if we generated a password (even though it's already visible in form)
+        // This acts as a confirmation/reminder
+        if (generatePassword && generatedPassword) {
           setShowPasswordDialog(true);
         }
 
-        // Update permissions if any are set
         if (Object.keys(permissions).length > 0) {
           updatePermissions(
             { userId: data.id, permissions },
@@ -120,8 +204,6 @@ export default function NewUserPage() {
     });
   };
 
-  const [createdUserId, setCreatedUserId] = useState<string | null>(null);
-
   const handlePasswordDialogClose = () => {
     setShowPasswordDialog(false);
     if (generatedPassword && createdUserId) {
@@ -137,8 +219,10 @@ export default function NewUserPage() {
     );
   }
 
+  const selectedPermissionsCount = Object.values(permissions).filter(v => v === true).length;
+
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
@@ -146,32 +230,34 @@ export default function NewUserPage() {
             variant="ghost"
             size="sm"
             onClick={() => router.push("/users")}
+            className="hover:bg-gray-200"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Create New User</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-3xl font-bold text-gray-900">Create New User</h1>
+            <p className="text-gray-600 mt-1">
               Add a new user account with appropriate role and permissions
             </p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-              <CardDescription>
-                Enter the user's name and email address
+        <div className="space-y-6">
+          {/* User Information */}
+          <Card className="border-gray-200 shadow-sm">
+            <CardHeader className="bg-white border-b border-gray-100">
+              <CardTitle className="text-gray-900">User Information</CardTitle>
+              <CardDescription className="text-gray-600">
+                Enter the user's basic details, role, and organization
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6 pt-6 bg-white">
+              {/* Basic Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">
-                    Full Name <span className="text-destructive">*</span>
+                  <Label htmlFor="name" className="text-gray-700 font-medium">
+                    Full Name <span className="text-red-600">*</span>
                   </Label>
                   <Input
                     id="name"
@@ -181,11 +267,12 @@ export default function NewUserPage() {
                     }
                     placeholder="Enter full name"
                     required
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">
-                    Email Address <span className="text-destructive">*</span>
+                  <Label htmlFor="email" className="text-gray-700 font-medium">
+                    Email Address <span className="text-red-600">*</span>
                   </Label>
                   <Input
                     id="email"
@@ -196,25 +283,16 @@ export default function NewUserPage() {
                     }
                     placeholder="Enter email address"
                     required
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
                   />
                 </div>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Role & MDA */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Role & Organization</CardTitle>
-              <CardDescription>
-                Assign the user's role and MDA affiliation
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              {/* Role & MDA */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="role">
-                    Role <span className="text-destructive">*</span>
+                  <Label htmlFor="role" className="text-gray-700 font-medium">
+                    Role <span className="text-red-600">*</span>
                   </Label>
                   <Select
                     value={formData.role}
@@ -222,21 +300,31 @@ export default function NewUserPage() {
                       setFormData({ ...formData, role: value as UserRole })
                     }
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full border-gray-300 bg-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
                       {Object.values(UserRole).map((role) => (
-                        <SelectItem key={role} value={role}>
+                        <SelectItem 
+                          key={role} 
+                          value={role}
+                          className="hover:bg-gray-100 cursor-pointer bg-white focus:bg-gray-100"
+                        >
                           {role}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {isLoadingTemplate && (
+                    <p className="text-xs text-blue-600 flex items-center gap-1">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Loading suggested permissions...
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="mda">
-                    MDA <span className="text-destructive">*</span>
+                  <Label htmlFor="mda" className="text-gray-700 font-medium">
+                    MDA <span className="text-red-600">*</span>
                   </Label>
                   <Select
                     value={formData.mdaId}
@@ -244,12 +332,16 @@ export default function NewUserPage() {
                       setFormData({ ...formData, mdaId: value })
                     }
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full border-gray-300 bg-white">
                       <SelectValue placeholder="Select MDA" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
                       {mdas.map((mda) => (
-                        <SelectItem key={mda.id} value={mda.id}>
+                        <SelectItem 
+                          key={mda.id} 
+                          value={mda.id}
+                          className="hover:bg-gray-100 cursor-pointer bg-white focus:bg-gray-100"
+                        >
                           {mda.name}
                         </SelectItem>
                       ))}
@@ -260,110 +352,199 @@ export default function NewUserPage() {
             </CardContent>
           </Card>
 
-          {/* Account Status */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Account Status</CardTitle>
-              <CardDescription>
-                Set the initial status for this user account
+          {/* Account Settings */}
+          <Card className="border-gray-200 shadow-sm">
+            <CardHeader className="bg-white border-b border-gray-100">
+              <CardTitle className="text-gray-900">Account Settings</CardTitle>
+              <CardDescription className="text-gray-600">
+                Configure account status and password options
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <RadioGroup
-                value={formData.status}
-                onValueChange={(value) =>
-                  setFormData({
-                    ...formData,
-                    status: value as "active" | "inactive",
-                  })
-                }
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="active" id="status-active" />
-                  <Label
-                    htmlFor="status-active"
-                    className="font-normal cursor-pointer"
+            <CardContent className="pt-6 bg-white">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Account Status */}
+                <div className="space-y-3">
+                  <Label className="text-gray-700 font-medium">Account Status</Label>
+                  <RadioGroup
+                    value={formData.status}
+                    onValueChange={(value) =>
+                      setFormData({
+                        ...formData,
+                        status: value as "active" | "inactive",
+                      })
+                    }
+                    className="space-y-2"
                   >
-                    Active - User can log in and use the system
-                  </Label>
+                    <div className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                      <RadioGroupItem value="active" id="status-active" />
+                      <Label
+                        htmlFor="status-active"
+                        className="font-normal cursor-pointer flex-1"
+                      >
+                        Active - User can log in
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                      <RadioGroupItem value="inactive" id="status-inactive" />
+                      <Label
+                        htmlFor="status-inactive"
+                        className="font-normal cursor-pointer flex-1"
+                      >
+                        Inactive - User cannot log in
+                      </Label>
+                    </div>
+                  </RadioGroup>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="inactive" id="status-inactive" />
-                  <Label
-                    htmlFor="status-inactive"
-                    className="font-normal cursor-pointer"
-                  >
-                    Inactive - User cannot log in
-                  </Label>
-                </div>
-              </RadioGroup>
-            </CardContent>
-          </Card>
 
-          {/* Password Options */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Password</CardTitle>
-              <CardDescription>
-                Choose how to handle the user's initial password
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="generate-password"
-                  checked={generatePassword}
-                  onCheckedChange={(checked) =>
-                    setGeneratePassword(checked as boolean)
-                  }
-                />
-                <Label
-                  htmlFor="generate-password"
-                  className="font-normal cursor-pointer"
-                >
-                  Generate password automatically (user must change on first login)
-                </Label>
+                {/* Password Options */}
+                <div className="space-y-3">
+                  <Label className="text-gray-700 font-medium">Password</Label>
+                  <div className="flex items-start space-x-3 p-3 rounded-lg border border-gray-200">
+                    <Checkbox
+                      id="generate-password"
+                      checked={generatePassword}
+                      onCheckedChange={(checked) =>
+                        setGeneratePassword(checked as boolean)
+                      }
+                      className="mt-1"
+                    />
+                    <Label
+                      htmlFor="generate-password"
+                      className="font-normal cursor-pointer flex-1"
+                    >
+                      Generate password automatically (user must change on first login)
+                    </Label>
+                  </div>
+                  
+                  {/* Show password field after generation */}
+                  {generatePassword && generatedPassword && (
+                    <div className="space-y-2">
+                      <Label htmlFor="generated-password" className="text-gray-700 font-medium">
+                        Generated Password
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="generated-password"
+                          value={generatedPassword}
+                          readOnly
+                          className="font-mono bg-gray-50 pr-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            if (generatedPassword) {
+                              navigator.clipboard.writeText(generatedPassword);
+                              toast.success("Password copied to clipboard");
+                            }
+                          }}
+                          className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-200"
+                        >
+                          <Copy className="h-4 w-4 text-gray-600" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded-md border border-amber-200">
+                        ⚠️ Save this password securely. User must change it on next login.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Permissions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Permissions</CardTitle>
-              <CardDescription>
-                Assign specific permissions to this user (optional)
+          <Card className="border-gray-200 shadow-sm">
+            <CardHeader className="bg-white border-b border-gray-100">
+              <CardTitle className="text-gray-900 flex items-center justify-between">
+                <span>Permissions</span>
+                {selectedPermissionsCount > 0 && (
+                  <span className="text-sm font-normal text-blue-600">
+                    {selectedPermissionsCount} selected
+                  </span>
+                )}
+              </CardTitle>
+              <CardDescription className="text-gray-600">
+                {suggestedPermissions.length > 0 
+                  ? `${suggestedPermissions.length} suggested permissions for ${formData.role} role have been pre-selected. You can modify them as needed.`
+                  : "Assign specific permissions to this user (optional)"}
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6 bg-white">
+              {suggestedPermissions.length > 0 && (
+                <div className="mb-4 space-y-2">
+                  <Alert className="bg-blue-50 border-blue-200">
+                    <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-blue-800 flex items-center justify-between w-full">
+                      <span>
+                        <span className="font-medium">Auto-applied permissions</span> based on the {formData.role} role. Review and adjust below.
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowPermissionList(!showPermissionList)}
+                        className="h-6 w-6 p-0 hover:bg-blue-100 text-blue-700"
+                        title={showPermissionList ? "Hide permissions list" : "Show permissions list"}
+                      >
+                        {showPermissionList ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                  
+                  {showPermissionList && (
+                    <div className="bg-blue-50/50 border border-blue-100 rounded-md p-3 text-sm animate-in fade-in slide-in-from-top-1 duration-200">
+                      <p className="font-medium text-blue-800 mb-2">Auto-selected permissions:</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {suggestedPermissions.map((perm) => (
+                          <div key={perm} className="flex items-center gap-2 text-blue-700 bg-white/50 px-2 py-1 rounded border border-blue-100 text-xs">
+                            <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                            {formatPermissionName(perm)}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               <PermissionsEditor
                 permissions={permissions}
                 onPermissionsChange={setPermissions}
+                disabled={isLoadingTemplate}
               />
             </CardContent>
           </Card>
 
           {/* Form Actions */}
-          <div className="flex justify-end gap-4 pt-4 border-t">
+          <div className="flex justify-end gap-4 pt-4 border-t border-gray-200 bg-white p-6 rounded-lg shadow-sm">
             <Button
               type="button"
               variant="outline"
               onClick={() => router.push("/users")}
+              className="border-gray-300 hover:bg-gray-50"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isCreating || isUpdatingPermissions}>
+            <Button 
+              onClick={handleSubmit}
+              disabled={isCreating || isUpdatingPermissions}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
               {(isCreating || isUpdatingPermissions) && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Create User
             </Button>
           </div>
-        </form>
+        </div>
 
         {/* Generated Password Dialog */}
         <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-          <DialogContent>
+          <DialogContent className="bg-white">
             <DialogHeader>
               <DialogTitle>Password Generated</DialogTitle>
               <DialogDescription>
@@ -378,7 +559,7 @@ export default function NewUserPage() {
                   <Input
                     value={generatedPassword || ""}
                     readOnly
-                    className="font-mono"
+                    className="font-mono bg-gray-50"
                   />
                   <Button
                     variant="outline"
@@ -393,14 +574,16 @@ export default function NewUserPage() {
                     Copy
                   </Button>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-md border border-amber-200">
                   ⚠️ Save this password securely. User must change it on next
                   login.
                 </p>
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={handlePasswordDialogClose}>Continue</Button>
+              <Button onClick={handlePasswordDialogClose} className="bg-blue-600 hover:bg-blue-700">
+                Continue
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -408,4 +591,3 @@ export default function NewUserPage() {
     </div>
   );
 }
-
