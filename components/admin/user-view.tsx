@@ -108,54 +108,49 @@ export default function UserViewClient({ id }: { id: string }) {
 
   return (
     <div className="flex flex-col min-h-screen">
-       {/* Background Header */}
-       <div className="h-48 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-b">
-         <div className="container mx-auto px-6 h-full flex flex-col justify-end pb-8">
-           <Button 
+        {/* Main Content */}
+        <div className="container mx-auto px-6 py-8 space-y-8">
+         <Button 
             variant="ghost" 
             size="sm" 
-            className="w-fit mb-auto mt-6" 
+            className="w-fit" 
             onClick={() => router.back()}
            >
              <ArrowLeft className="h-4 w-4 mr-2" />
              Back to Users
            </Button>
+
+         {/* User Profile Header */}
+         <div className="flex flex-col md:flex-row gap-6 items-start md:items-end">
+           <Avatar className="h-32 w-32 border-4 border-background shadow-xl">
+              <AvatarImage src="" alt={`${user.firstname} ${user.lastname}`} />
+              <AvatarFallback className="text-4xl font-bold bg-primary text-primary-foreground">
+                {`${user.firstname?.[0] || ""}${user.lastname?.[0] || ""}`.toUpperCase()}
+              </AvatarFallback>
+           </Avatar>
+           
+           <div className="flex-1 space-y-2 mb-2">
+             <h1 className="text-3xl font-bold tracking-tight">{`${user.firstname} ${user.lastname}`}</h1>
+             <div className="flex items-center gap-3">
+               <Badge variant="secondary" className="px-3 py-1 text-sm font-medium">
+                 {user.role}
+               </Badge>
+               <Badge 
+                 variant={user.status === 'active' ? 'default' : 'destructive'} 
+                 className="px-3 py-1 text-sm font-medium capitalize"
+               >
+                 {user.status || 'active'}
+               </Badge>
+             </div>
+           </div>
+
+           <div className="flex gap-2 mb-2">
+             <Button onClick={() => router.push(`/users/${user.id}/edit`)}>
+               <Edit className="mr-2 h-4 w-4" />
+               Edit Profile
+             </Button>
+           </div>
          </div>
-       </div>
-
-       {/* Main Content */}
-       <div className="container mx-auto px-6 -mt-16 space-y-8 pb-12">
-        {/* User Profile Header */}
-        <div className="flex flex-col md:flex-row gap-6 items-start md:items-end">
-          <Avatar className="h-32 w-32 border-4 border-background shadow-xl">
-             <AvatarImage src="" alt={`${user.firstname} ${user.lastname}`} />
-             <AvatarFallback className="text-4xl font-bold bg-primary text-primary-foreground">
-               {`${user.firstname?.[0] || ""}${user.lastname?.[0] || ""}`.toUpperCase()}
-             </AvatarFallback>
-          </Avatar>
-          
-          <div className="flex-1 space-y-2 mb-2">
-            <h1 className="text-3xl font-bold tracking-tight">{`${user.firstname} ${user.lastname}`}</h1>
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="px-3 py-1 text-sm font-medium">
-                {user.role}
-              </Badge>
-              <Badge 
-                variant={user.status === 'active' ? 'default' : 'destructive'} 
-                className="px-3 py-1 text-sm font-medium capitalize"
-              >
-                {user.status || 'active'}
-              </Badge>
-            </div>
-          </div>
-
-          <div className="flex gap-2 mb-2">
-            <Button onClick={() => router.push(`/users/${user.id}/edit`)}>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit Profile
-            </Button>
-          </div>
-        </div>
 
         <Separator />
 
