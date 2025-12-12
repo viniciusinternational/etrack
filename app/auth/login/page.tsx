@@ -14,7 +14,7 @@ import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { isAuthenticated, loginWithToken } = useAuthStore();
+  const { isAuthenticated, loginWithToken, user } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -27,10 +27,14 @@ export default function LoginPage() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push("/dashboard");
+    if (isAuthenticated && user) {
+      if (user.role === "SuperAdmin") {
+        router.push("/dashboard");
+      } else {
+        router.push("/events");
+      }
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, user, router]);
 
   const validate = () => {
     const newErrors: typeof errors = {};
@@ -82,11 +86,13 @@ export default function LoginPage() {
 
         toast.success("Login successful");
 
-        // Redirect based on mustChangePassword flag
+        // Redirect based on role and password change requirement
         if (user.mustChangePassword) {
           router.push("/auth/resetpassword");
-        } else {
+        } else if (user.role === "SuperAdmin") {
           router.push("/dashboard");
+        } else {
+          router.push("/events");
         }
       } else {
         setErrors({
@@ -162,7 +168,6 @@ export default function LoginPage() {
                     {errors.general}
                   </div>
                 )}
-
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm font-medium">
                     Email Address

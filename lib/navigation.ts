@@ -40,7 +40,7 @@ export const navigationConfig: NavigationItem[] = [
     label: 'Dashboard',
     icon: LayoutDashboard,
     href: '/dashboard',
-    permissions: [], // Empty array means always accessible when authenticated
+    permissions: ['view_dashboard'], // Application Dashboard
   },
   // Events
   {

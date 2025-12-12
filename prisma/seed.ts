@@ -1,306 +1,387 @@
-import { PrismaClient, UserRole } from "@prisma/client";
+import { 
+  PrismaClient, 
+  UserRole, 
+  ProjectStatus, 
+  ProjectCategory, 
+  MilestoneStage, 
+  SubmissionStatus, 
+  ProcurementStatus, 
+  BidStatus, 
+  PaymentStatus, 
+  PaymentMethod, 
+  PaymentSourceType,
+  EventStatus,
+  EventPriority
+} from "@prisma/client";
 import { hashPassword } from "../lib/password";
 import { ALL_PERMISSION_KEYS, type UserPermissions } from "../types/permissions";
 
-
-
 const prisma = new PrismaClient();
 
-/**
- * Build permissions JSON object with all permissions enabled
- * This creates a UserPermissions object where all permission keys are set to true
- */
+// Helper to build full permissions
 function buildAllPermissionsJSON(): UserPermissions {
   const permissionsObj: Partial<UserPermissions> = {};
-
-  // Initialize all permission keys to true
   for (const key of ALL_PERMISSION_KEYS) {
     permissionsObj[key] = true;
   }
-
   return permissionsObj as UserPermissions;
 }
 
+// Fixed UUIDs for consistent relationship mapping
+const MDAS = {
+  WORKS: { id: "mda-works-001", name: "Ministry of Works and Infrastructure" },
+  HEALTH: { id: "mda-health-001", name: "Ministry of Health" },
+  EDUCATION: { id: "mda-education-001", name: "Ministry of Education" },
+};
+
+const USERS = {
+  ADMIN: { id: "user-admin-001", email: "admin@etrack.gov", role: UserRole.SuperAdmin },
+  PM: { id: "user-pm-001", email: "pm@etrack.gov", role: UserRole.ProjectManager },
+  CONTRACTOR: { id: "user-cont-001", email: "contractor@company.com", role: UserRole.Contractor },
+  FINANCE: { id: "user-fin-001", email: "finance@etrack.gov", role: UserRole.FinanceOfficer },
+  PROCUREMENT: { id: "user-proc-001", email: "procurement@etrack.gov", role: UserRole.ProcurementOfficer },
+  AUDITOR: { id: "user-audit-001", email: "auditor@etrack.gov", role: UserRole.Auditor },
+  VENDOR: { id: "user-vendor-001", email: "vendor@company.com", role: UserRole.Vendor },
+};
+
 async function main() {
-  console.log("Starting seed...");
+  console.log("🌱 Starting comprehensive seed...");
 
-  // Clear existing data (in reverse order of dependencies)
-  console.log("Clearing existing data...");
-  // await prisma.calendarEvent.deleteMany();
-  // await prisma.auditLog.deleteMany();
-  // await prisma.discrepancyRemark.deleteMany();
-  // await prisma.meetingMinutes.deleteMany();
-  // await prisma.meeting.deleteMany();
-  // await prisma.award.deleteMany();
-  // await prisma.bid.deleteMany();
-  // await prisma.procurementRequest.deleteMany();
-  // await prisma.revenue.deleteMany();
-  // await prisma.expenditure.deleteMany();
-  // await prisma.budgetAllocation.deleteMany();
-  // await prisma.milestoneSubmission.deleteMany();
-  // await prisma.project.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.mDA.deleteMany(); // Note: Prisma client uses PascalCase for model names
+  // 1. CLEANUP (Reverse dependency order to avoid constraints)
+  console.log("🧹 Clearing existing data...");
+  const deleteTable = (model: any) => model.deleteMany();
+  
+  await deleteTable(prisma.paymentInstallment);
+  await deleteTable(prisma.paymentItem);
+  await deleteTable(prisma.payment);
+  await deleteTable(prisma.award);
+  await deleteTable(prisma.bid);
+  await deleteTable(prisma.procurementRequest);
+  await deleteTable(prisma.revenue);
+  await deleteTable(prisma.expenditure);
+  await deleteTable(prisma.budgetAllocation);
+  await deleteTable(prisma.milestoneSubmission);
+  await deleteTable(prisma.calendarEvent);
+  await deleteTable(prisma.meetingMinutes);
+  await deleteTable(prisma.meeting);
+  await deleteTable(prisma.project);
+  await deleteTable(prisma.rolePermissionTemplate);
+  await deleteTable(prisma.user);
+  await deleteTable(prisma.mDA);
 
-  console.log("Deleted existing data.");
+  console.log("✅ Data cleared.");
 
-  // ========== FIRST PASS: Create 10 MDAs ==========
-  console.log("Creating MDAs...");
-  const mdas = [
-    {
-      name: "Ministry of Works and Infrastructure",
-      category: "Infrastructure",
-      description: "Responsible for public works and infrastructure development",
-      headOfMda: "Eng. Musa Abdullahi",
-      email: "info@works.gov.ng",
-      phone: "+234-800-123-4567",
-      address: "Federal Secretariat, Abuja",
-      isActive: true,
-    },
-    {
-      name: "Ministry of Health",
-      category: "Healthcare",
-      description: "Oversees healthcare services and public health initiatives",
-      headOfMda: "Dr. Fatima Ibrahim",
-      email: "info@health.gov.ng",
-      phone: "+234-800-123-4568",
-      address: "Federal Ministry of Health, Abuja",
-      isActive: true,
-    },
-    {
-      name: "Ministry of Education",
-      category: "Education",
-      description: "Manages educational policies and programs",
-      headOfMda: "Prof. Ahmed Bello",
-      email: "info@education.gov.ng",
-      phone: "+234-800-123-4569",
-      address: "Federal Ministry of Education, Abuja",
-      isActive: true,
-    },
-    {
-      name: "Ministry of Agriculture and Rural Development",
-      category: "Agriculture",
-      description: "Promotes agricultural development and food security",
-      headOfMda: "Alhaji Sani Mohammed",
-      email: "info@agriculture.gov.ng",
-      phone: "+234-800-123-4570",
-      address: "Federal Ministry of Agriculture, Abuja",
-      isActive: true,
-    },
-    {
-      name: "Ministry of Finance",
-      category: "Finance",
-      description: "Manages fiscal policies and financial resources",
-      headOfMda: "Dr. Zainab Usman",
-      email: "info@finance.gov.ng",
-      phone: "+234-800-123-4571",
-      address: "Federal Ministry of Finance, Abuja",
-      isActive: true,
-    },
-    {
-      name: "Ministry of Water Resources",
-      category: "Infrastructure",
-      description: "Oversees water supply and management",
-      headOfMda: "Eng. Hassan Yakubu",
-      email: "info@water.gov.ng",
-      phone: "+234-800-123-4572",
-      address: "Federal Ministry of Water Resources, Abuja",
-      isActive: true,
-    },
-    {
-      name: "Ministry of Power",
-      category: "Infrastructure",
-      description: "Manages power generation and distribution",
-      headOfMda: "Eng. Amina Lawal",
-      email: "info@power.gov.ng",
-      phone: "+234-800-123-4573",
-      address: "Federal Ministry of Power, Abuja",
-      isActive: true,
-    },
-    {
-      name: "Ministry of Transportation",
-      category: "Infrastructure",
-      description: "Oversees transportation infrastructure and policies",
-      headOfMda: "Eng. Ibrahim Suleiman",
-      email: "info@transport.gov.ng",
-      phone: "+234-800-123-4574",
-      address: "Federal Ministry of Transportation, Abuja",
-      isActive: true,
-    },
-    {
-      name: "Ministry of Environment",
-      category: "Environment",
-      description: "Manages environmental protection and conservation",
-      headOfMda: "Dr. Maryam Abubakar",
-      email: "info@environment.gov.ng",
-      phone: "+234-800-123-4575",
-      address: "Federal Ministry of Environment, Abuja",
-      isActive: true,
-    },
-    {
-      name: "Ministry of Science and Technology",
-      category: "Technology",
-      description: "Promotes scientific research and technological innovation",
-      headOfMda: "Prof. Kabiru Musa",
-      email: "info@science.gov.ng",
-      phone: "+234-800-123-4576",
-      address: "Federal Ministry of Science and Technology, Abuja",
-      isActive: true,
-    },
+  // 2. SEED MDAS
+  console.log("🏢 Seeding MDAs...");
+  await prisma.mDA.createMany({
+    data: [
+      {
+        id: MDAS.WORKS.id,
+        name: MDAS.WORKS.name,
+        category: "Infrastructure",
+        description: "Public works and roads",
+        headOfMda: "Eng. Musa Abdullahi",
+        email: "works@gov.ng",
+        isActive: true,
+      },
+      {
+        id: MDAS.HEALTH.id,
+        name: MDAS.HEALTH.name,
+        category: "Healthcare",
+        description: "Health services",
+        headOfMda: "Dr. Fatima Ibrahim",
+        email: "health@gov.ng",
+        isActive: true,
+      },
+      {
+        id: MDAS.EDUCATION.id,
+        name: MDAS.EDUCATION.name,
+        category: "Education",
+        description: "Education management",
+        headOfMda: "Prof. Ahmed Bello",
+        email: "education@gov.ng",
+        isActive: true,
+      },
+      { name: "Ministry of Finance", category: "Finance", email: "finance@gov.ng" },
+      { name: "Ministry of Agriculture", category: "Agriculture", email: "agric@gov.ng" },
+    ]
+  });
+
+  // 3. SEED ROLE PERMISSION TEMPLATES
+  console.log("📜 Seeding Role Templates...");
+  const roleTemplates = [
+    { role: UserRole.SuperAdmin, permissions: ALL_PERMISSION_KEYS },
+    { role: UserRole.Admin, permissions: ALL_PERMISSION_KEYS },
+    { role: UserRole.ProjectManager, permissions: ['view_event', 'view_project', 'create_project', 'edit_project', 'view_milestone', 'create_milestone', 'view_budget', 'view_meeting'] },
+    { role: UserRole.Contractor, permissions: ['view_event', 'view_contract', 'view_milestone', 'create_milestone'] },
+    { role: UserRole.FinanceOfficer, permissions: ['view_event', 'view_budget', 'create_budget', 'edit_budget', 'view_payment', 'create_payment', 'edit_payment', 'view_revenue', 'view_expenditure'] },
+    { role: UserRole.ProcurementOfficer, permissions: ['view_event', 'view_procurement', 'create_procurement', 'view_bid', 'view_award', 'create_award'] },
+    { role: UserRole.Auditor, permissions: ['view_event', 'view_project', 'view_budget', 'view_payment', 'view_audit', 'create_audit'] },
+    { role: UserRole.Vendor, permissions: ['view_event', 'view_procurement', 'create_bid'] },
   ];
 
-  const createdMdas = [];
-  for (const mda of mdas) {
-    const created = await prisma.mDA.create({ data: mda });
-    createdMdas.push(created);
+  for (const t of roleTemplates) {
+    await prisma.rolePermissionTemplate.create({
+      data: { role: t.role, permissions: t.permissions }
+    });
   }
 
-  console.log(`Created ${createdMdas.length} MDAs`);
+  // 4. SEED USERS
+  console.log("👥 Seeding Users...");
+  const password = hashPassword("password123");
+  const users = [
+    { ...USERS.ADMIN, firstname: "System", lastname: "Admin", permissions: buildAllPermissionsJSON() },
+    { ...USERS.PM, firstname: "Project", lastname: "Manager", mdaId: MDAS.WORKS.id },
+    { ...USERS.CONTRACTOR, firstname: "John", lastname: "Builder", mdaId: MDAS.WORKS.id },
+    { ...USERS.FINANCE, firstname: "Jane", lastname: "Finance", mdaId: MDAS.EDUCATION.id },
+    { ...USERS.PROCUREMENT, firstname: "Peter", lastname: "Procure", mdaId: MDAS.HEALTH.id },
+    { ...USERS.AUDITOR, firstname: "Alex", lastname: "Audit" },
+    { ...USERS.VENDOR, firstname: "Victor", lastname: "Vendor" },
+  ];
 
-  // ========== SECOND PASS: Create SuperAdmin User with All Permissions ==========
-  console.log("Creating SuperAdmin user...");
-  
-  // Generate password for admin
-  const adminPassword = 'admin@pass';
-  const adminPasswordHash = hashPassword(adminPassword);
+  // Create a map for quick lookup
+  const rolePermissionsMap = roleTemplates.reduce((acc, t) => {
+    acc[t.role] = t.permissions;
+    return acc;
+  }, {} as Record<UserRole, string[]>);
 
-  // Build permissions JSON object with all permissions enabled
-  const allPermissionsJSON = buildAllPermissionsJSON();
+  for (const u of users) {
+    const user: any = u;
+    // If permissions explicitly provided (like Admin), use them. 
+    // Otherwise, build from role template.
+    let userPermissions = user.permissions;
 
-  const adminUser = await prisma.user.create({
+    if (!userPermissions) {
+      const rolePerms = rolePermissionsMap[user.role as UserRole] || [];
+      const permissionsObj: any = {};
+      for (const key of rolePerms) {
+        permissionsObj[key] = true;
+      }
+      userPermissions = permissionsObj;
+    }
+
+    await prisma.user.create({
+      data: {
+        id: user.id,
+        email: user.email,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        role: user.role,
+        password,
+        mdaId: user.mdaId,
+        permissions: userPermissions,
+        status: "active"
+      }
+    });
+  }
+
+  // 5. SEED PROJECTS
+  console.log("🏗️ Seeding Projects...");
+  const project1 = await prisma.project.create({
     data: {
-      firstname: "System",
-      lastname: "Administrator",
-      email: "admin@etrack.gov",
-      role: UserRole.SuperAdmin,
-      password: adminPasswordHash,
-      mustChangePassword: true,
-      status: "active",
-      permissions: allPermissionsJSON, // Set JSON permissions (RBAS format)
-    },
+      title: "Rehabilitation of Lagos-Ibadan Expressway",
+      description: "Major road rehabilitation project phase 2",
+      category: ProjectCategory.Infrastructure,
+      supervisingMdaId: MDAS.WORKS.id,
+      supervisorId: USERS.PM.id,
+      contractorId: USERS.CONTRACTOR.id,
+      contractValue: 150000000,
+      startDate: new Date("2025-01-15"),
+      endDate: new Date("2026-06-30"),
+      status: ProjectStatus.InProgress,
+    }
   });
 
-
-
-// Then add this section AFTER creating MDAs and BEFORE creating the admin user
-
-console.log("Creating role permission templates...");
-
-const roleTemplates = [
-  {
-    role: UserRole.SuperAdmin,
-    permissions: ALL_PERMISSION_KEYS, // All permissions
-    description: "Full system access with all permissions"
-  },
-  {
-    role: UserRole.Admin,
-    permissions: [
-      "view_user", "create_user", "edit_user", "delete_user",
-      "view_mda", "create_mda", "edit_mda",
-      "view_project", "create_project", "edit_project",
-      "view_budget", "view_expenditure", "view_revenue"
-    ],
-    description: "Administrative access to users, MDAs, and projects"
-  },
-  {
-    role: UserRole.GovernorAdmin,
-    permissions: [
-      "view_user", "view_mda", "view_project", "view_budget",
-      "view_expenditure", "view_revenue", "view_audit",
-      "view_meeting", "view_procurement"
-    ],
-    description: "Governor-level oversight and reporting access"
-  },
-  {
-    role: UserRole.ProjectManager,
-    permissions: [
-      "view_project", "edit_project", "create_project",
-      "view_milestone", "create_milestone", "edit_milestone",
-      "view_budget", "view_expenditure",
-      "view_meeting", "create_meeting"
-    ],
-    description: "Manage projects, milestones, and view financial data"
-  },
-  {
-    role: UserRole.Contractor,
-    permissions: [
-      "view_project", "view_milestone", "create_milestone", "edit_milestone"
-    ],
-    description: "Submit and track project milestones"
-  },
-  {
-    role: UserRole.FinanceOfficer,
-    permissions: [
-      "view_budget", "create_budget", "edit_budget",
-      "view_expenditure", "create_expenditure", "edit_expenditure",
-      "view_revenue", "create_revenue", "edit_revenue",
-      "view_payment", "create_payment", "edit_payment",
-      "view_project"
-    ],
-    description: "Manage financial operations and budgets"
-  },
-  {
-    role: UserRole.ProcurementOfficer,
-    permissions: [
-      "view_procurement", "create_procurement", "edit_procurement",
-      "view_bid", "create_bid", "edit_bid", "approve_bid",
-      "view_award", "create_award"
-    ],
-    description: "Handle procurement requests and bidding processes"
-  },
-  {
-    role: UserRole.Vendor,
-    permissions: [
-      "view_procurement", "view_bid", "create_bid", "edit_bid"
-    ],
-    description: "View procurement opportunities and submit bids"
-  },
-  {
-    role: UserRole.Auditor,
-    permissions: [
-      "view_project", "view_budget", "view_expenditure", "view_revenue",
-      "view_procurement", "view_audit", "create_audit", "edit_audit",
-      "view_payment"
-    ],
-    description: "Audit and review financial and project data"
-  },
-  {
-    role: UserRole.MeetingUser,
-    permissions: [
-      "view_meeting", "view_project"
-    ],
-    description: "Attend meetings and view basic project information"
-  },
-];
-
-for (const template of roleTemplates) {
-  await prisma.rolePermissionTemplate.upsert({
-    where: { role: template.role },
-    update: { 
-      permissions: template.permissions,
-      description: template.description 
-    },
-    create: template,
+  const project2 = await prisma.project.create({
+    data: {
+      title: "Construction of Primary Health Center",
+      description: "New health center construction in rural district",
+      category: ProjectCategory.Healthcare,
+      supervisingMdaId: MDAS.HEALTH.id,
+      supervisorId: USERS.PM.id, // Assuming PM can supervise cross-MDA for seed simplicity or verify schema flexibility
+      contractValue: 45000000,
+      startDate: new Date("2025-03-01"),
+      endDate: new Date("2025-12-31"),
+      status: ProjectStatus.Planned,
+    }
   });
-}
 
-console.log(`Created ${roleTemplates.length} role permission templates`);
+  // 6. SEED MILESTONES
+  console.log("📍 Seeding Milestones...");
+  await prisma.milestoneSubmission.create({
+    data: {
+      projectId: project1.id,
+      contractorId: USERS.CONTRACTOR.id,
+      milestoneStage: MilestoneStage.Foundation,
+      percentComplete: 100,
+      status: SubmissionStatus.Approved,
+      reviewedBy: USERS.PM.id,
+      reviewedAt: new Date(),
+      notes: "Foundation completed successfully according to specifications",
+    }
+  });
 
-  console.log(`Created admin user: ${adminUser.email}`);
-  console.log(`Generated password: ${adminPassword}`);
-  console.log("⚠️  IMPORTANT: Save this password securely. User must change it on first login.");
-  console.log(`Set ${Object.keys(allPermissionsJSON).length} permissions in JSON field (RBAS format)`);
+  await prisma.milestoneSubmission.create({
+    data: {
+      projectId: project1.id,
+      contractorId: USERS.CONTRACTOR.id,
+      milestoneStage: MilestoneStage.Superstructure,
+      percentComplete: 45,
+      status: SubmissionStatus.Pending,
+      notes: "Ongoing superstructure work",
+    }
+  });
+
+  // 7. SEED FINANCIALS (Budget, Revenue, Expenditure)
+  console.log("💰 Seeding Financials...");
+  
+  // Budget
+  await prisma.budgetAllocation.create({
+    data: {
+      mdaId: MDAS.WORKS.id,
+      fiscalYear: 2025,
+      quarter: 1,
+      amount: 500000000,
+      source: "Federal Allocation",
+    }
+  });
+
+  // Expenditure (Project Related)
+  await prisma.expenditure.create({
+    data: {
+      projectId: project1.id,
+      amount: 25000000, // Mobilization fee
+      date: new Date("2025-01-20"),
+      recipient: "ABC Construction Ltd",
+    }
+  });
+
+  // Revenue
+  await prisma.revenue.create({
+    data: {
+      mdaId: MDAS.EDUCATION.id,
+      type: "Grant",
+      amount: 10000000,
+      date: new Date("2025-02-10"),
+    }
+  });
+
+  // 8. SEED PROCUREMENT
+  console.log("🛒 Seeding Procurement...");
+  
+  // Request
+  const procRequest = await prisma.procurementRequest.create({
+    data: {
+      mdaId: MDAS.HEALTH.id,
+      title: "Supply of Medical Equipment",
+      description: "Procurement of X-ray machines and MRI scanners",
+      estimatedCost: 75000000,
+      requestDate: new Date("2025-04-01"),
+      status: ProcurementStatus.Awarded,
+    }
+  });
+
+  // Bid
+  const bid = await prisma.bid.create({
+    data: {
+      procurementRequestId: procRequest.id,
+      vendorId: USERS.VENDOR.id,
+      bidAmount: 72000000,
+      submittedAt: new Date("2025-04-15"),
+      status: BidStatus.Awarded,
+    }
+  });
+
+  // Award
+  await prisma.award.create({
+    data: {
+      procurementRequestId: procRequest.id,
+      vendorId: USERS.VENDOR.id,
+      contractValue: 72000000,
+      awardDate: new Date("2025-05-01"),
+    }
+  });
+
+  // 9. SEED PAYMENTS
+  console.log("💳 Seeding Payments...");
+  await prisma.payment.create({
+    data: {
+      sourceType: PaymentSourceType.project,
+      projectId: project1.id,
+      createdById: USERS.FINANCE.id,
+      payeeId: USERS.CONTRACTOR.id,
+      amount: 15000000,
+      totalAmount: 15000000,
+      currency: "NGN",
+      status: PaymentStatus.paid,
+      method: PaymentMethod.bank_transfer,
+      reference: "PAY-2025-001",
+      paymentDate: new Date().toISOString(),
+      items: {
+        create: {
+          description: "Milestone 1 Payment - Foundation",
+          quantity: 1,
+          unitPrice: 15000000,
+          total: 15000000,
+          currency: "NGN"
+        }
+      }
+    }
+  });
+
+  await prisma.payment.create({
+    data: {
+      sourceType: PaymentSourceType.project,
+      projectId: project1.id,
+      createdById: USERS.FINANCE.id,
+      amount: 5000000,
+      totalAmount: 5000000,
+      currency: "NGN",
+      status: PaymentStatus.pending_approval,
+      isDraft: false,
+      requiresApproval: true,
+      items: {
+        create: {
+          description: "Materials Purchase Reimbursement",
+          quantity: 1,
+          unitPrice: 5000000,
+          total: 5000000,
+          currency: "NGN"
+        }
+      }
+    }
+  });
+
+  // 10. SEED EVENTS & MEETINGS
+  console.log("📅 Seeding Events & Meetings...");
+  await prisma.meeting.create({
+    data: {
+      title: "Project Stakeholder Meeting",
+      scheduledAt: new Date("2025-06-15T10:00:00Z"),
+      locationOrLink: "Conference Room A",
+      participants: [USERS.PM.id, USERS.CONTRACTOR.id],
+    }
+  });
+
+  await prisma.calendarEvent.create({
+    data: {
+      title: "Site Inspection - Lagos Ibadan",
+      date: new Date("2025-07-01"),
+      status: EventStatus.planned,
+      priority: EventPriority.high,
+      project: "Lagos-Ibadan Rehab",
+    }
+  });
 
   console.log("\n✅ Seed completed successfully!");
-  console.log(`\n📊 Summary:`);
-  console.log(`   - MDAs: ${createdMdas.length}`);
-  console.log(`   - Admin User: ${adminUser.email}`);
-  console.log(`   - Admin Permissions: ${Object.keys(allPermissionsJSON).length} (all enabled)`);
-  console.log(`\n🔑 Admin Credentials:`);
-  console.log(`   Email: ${adminUser.email}`);
-  console.log(`   Password: ${adminPassword}`);
-  console.log(`   ⚠️  User must change password on first login`);
-  console.log(`\n✅ Admin user has ALL permissions enabled (RBAS JSON format)`);
+  console.log(`\n🔑 Login Credentials (Password: password123):`);
+  console.log(`   Admin:       ${USERS.ADMIN.email}`);
+  console.log(`   PM:          ${USERS.PM.email}`);
+  console.log(`   Contractor:  ${USERS.CONTRACTOR.email}`);
+  console.log(`   Finance:     ${USERS.FINANCE.email}`);
+  console.log(`   Procurement: ${USERS.PROCUREMENT.email}`);
+  console.log(`   Auditor:     ${USERS.AUDITOR.email}`);
+  console.log(`   Vendor:      ${USERS.VENDOR.email}`);
 }
 
 main()
@@ -311,4 +392,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-
