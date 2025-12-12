@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import {
   ArrowLeft,
   Edit,
@@ -36,6 +37,133 @@ import {
   getMilestoneStageLabel,
 } from "@/components/projects-manager/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+// Milestone Card Component with collapsible evidence
+function MilestoneCard({
+  milestone,
+  onEditMilestone,
+  onApproveMilestone,
+  onRejectMilestone,
+}: {
+  milestone: MilestoneSubmission;
+  onEditMilestone?: (milestone: MilestoneSubmission) => void;
+  onApproveMilestone?: (milestone: MilestoneSubmission) => void;
+  onRejectMilestone?: (milestone: MilestoneSubmission) => void;
+}) {
+  const [showAllDocs, setShowAllDocs] = useState(false);
+  const visibleDocs = showAllDocs ? milestone.evidenceDocs : milestone.evidenceDocs.slice(0, 2);
+  const hasMoreDocs = milestone.evidenceDocs.length > 2;
+
+  return (
+    <Card>
+      <CardContent className="pt-4 pb-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="text-base font-semibold text-gray-900">
+                {getMilestoneStageLabel(milestone.milestoneStage)}
+              </h3>
+              <Badge
+                variant="secondary"
+                className={
+                  milestone.status === SubmissionStatus.Approved
+                    ? "bg-green-100 text-green-800"
+                    : milestone.status === SubmissionStatus.Pending
+                    ? "bg-yellow-100 text-yellow-800"
+                    : "bg-red-100 text-red-800"
+                }
+              >
+                {milestone.status}
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mb-2">
+              <div>
+                <span className="text-xs text-gray-500">Progress</span>
+                <div className="mt-0.5">
+                  <div className="flex items-center gap-2">
+                    <Progress value={milestone.percentComplete} className="h-2 w-full" />
+                    <span className="text-xs font-medium whitespace-nowrap">{milestone.percentComplete}%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-xs text-gray-500">Submitted</span>
+                <div className="mt-0.5 text-xs text-gray-700">
+                  {new Date(milestone.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+            </div>
+
+            {milestone.notes && (
+              <p className="text-xs text-gray-700 mb-2 line-clamp-2">{milestone.notes}</p>
+            )}
+
+            {/* Evidence section - moved below details */}
+            {milestone.evidenceDocs.length > 0 && (
+              <div className="mt-2 pt-2 border-t">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-medium text-gray-700">
+                    Evidence ({milestone.evidenceDocs.length})
+                  </span>
+                  {hasMoreDocs && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAllDocs(!showAllDocs)}
+                      className="h-auto py-0.5 px-1.5 text-xs"
+                    >
+                      {showAllDocs ? 'Less' : `+${milestone.evidenceDocs.length - 2} more`}
+                    </Button>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  {visibleDocs.map((doc, idx) => (
+                    <div
+                      key={idx}
+                      className="text-xs bg-gray-50 px-2 py-1 rounded flex items-center gap-1.5"
+                    >
+                      <FileText className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">{doc}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Action buttons - moved to extreme right */}
+          <div className="flex flex-col gap-1.5">
+            {onEditMilestone && (
+              <Button variant="outline" size="sm" onClick={() => onEditMilestone(milestone)} className="h-8 text-xs">
+                <Edit className="h-3 w-3 mr-1" />
+                Edit
+              </Button>
+            )}
+            {milestone.status === SubmissionStatus.Pending && onApproveMilestone && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => onApproveMilestone(milestone)}
+                className="bg-green-600 hover:bg-green-700 h-8 text-xs"
+              >
+                <Check className="h-3 w-3 mr-1" />
+                Approve
+              </Button>
+            )}
+            {milestone.status === SubmissionStatus.Pending && onRejectMilestone && (
+              <Button variant="destructive" size="sm" onClick={() => onRejectMilestone(milestone)} className="h-8 text-xs">
+                <X className="h-3 w-3 mr-1" />
+                Reject
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export function ProjectDetailView({
   project,
@@ -328,113 +456,13 @@ export function ProjectDetailView({
               ) : (
             <div className="space-y-4 max-h-[55vh] overflow-y-auto">
               {milestones.map((milestone) => (
-                <Card key={milestone.id}>
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <h3 className="text-lg font-semibold text-gray-900">
-                              {getMilestoneStageLabel(milestone.milestoneStage)}
-                            </h3>
-                            <Badge
-                              variant="secondary"
-                              className={
-                                milestone.status === SubmissionStatus.Approved
-                                  ? "bg-green-100 text-green-800"
-                                  : milestone.status === SubmissionStatus.Pending
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : "bg-red-100 text-red-800"
-                              }
-                            >
-                              {milestone.status}
-                            </Badge>
-                          </div>
-                          {onEditMilestone && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => onEditMilestone(milestone)}
-                            >
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit
-                            </Button>
-                          )}
-                          {milestone.status === SubmissionStatus.Pending && onApproveMilestone && (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              onClick={() => onApproveMilestone(milestone)}
-                              className="bg-green-600 hover:bg-green-700"
-                            >
-                              <Check className="h-4 w-4 mr-2" />
-                              Approve
-                            </Button>
-                          )}
-                          {milestone.status === SubmissionStatus.Pending && onRejectMilestone && (
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => onRejectMilestone(milestone)}
-                            >
-                              <X className="h-4 w-4 mr-2" />
-                              Reject
-                            </Button>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                          <div>
-                            <span className="text-sm text-gray-500">
-                              Progress
-                            </span>
-                            <div className="mt-1">
-                              <div className="flex items-center gap-2">
-                                <Progress
-                                  value={milestone.percentComplete}
-                                  className="h-3 w-full"
-                                />
-                                <span className="text-sm font-medium">
-                                  {milestone.percentComplete}%
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div>
-                            <span className="text-sm text-gray-500">
-                              Submitted
-                            </span>
-                            <div className="mt-1 text-sm text-gray-700">
-                              {new Date(milestone.createdAt).toLocaleString()}
-                            </div>
-                          </div>
-                        </div>
-
-                        {milestone.notes && (
-                          <p className="text-sm text-gray-700">
-                            {milestone.notes}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="ml-4 flex-shrink-0">
-                        <div className="text-sm text-gray-500">Evidence</div>
-                        <div className="mt-2 space-y-2">
-                          {milestone.evidenceDocs.map((doc, idx) => (
-                            <div
-                              key={idx}
-                              className="text-sm bg-gray-50 p-2 rounded flex items-center gap-2"
-                            >
-                              <FileText className="h-4 w-4" />
-                              <span>{doc}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <MilestoneCard
+                  key={milestone.id}
+                  milestone={milestone}
+                  onEditMilestone={onEditMilestone}
+                  onApproveMilestone={onApproveMilestone}
+                  onRejectMilestone={onRejectMilestone}
+                />
               ))}
             </div>
               )}
