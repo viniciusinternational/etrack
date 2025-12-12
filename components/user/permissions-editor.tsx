@@ -197,6 +197,7 @@ export function PermissionsEditor({
                 >
                   <div className="flex items-center gap-3">
                     <Button
+                      type="button"
                       variant="ghost"
                       size="sm"
                       className="h-6 w-6 p-0 hover:bg-transparent"
@@ -277,6 +278,7 @@ export function PermissionsEditor({
           {totalSelected} permission{totalSelected !== 1 ? "s" : ""} selected
         </span>
         <Button
+          type="button"
           variant="outline"
           size="sm"
           onClick={() => {
