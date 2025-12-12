@@ -19,9 +19,13 @@ import {
 } from "./utils";
 import numeral from "numeral";
 import { useTenders } from "@/hooks/use-tenders";
+import { useAuthStore } from "@/store/auth-store";
+import { hasPermission } from "@/lib/permissions";
 
 export function TendersListView() {
   const { data: tenders, isLoading } = useTenders();
+  const { user } = useAuthStore();
+  const canCreateTender = hasPermission(user as any, 'create_tender');
 
   const stats = useMemo(() => {
     if (!tenders)
@@ -46,9 +50,11 @@ export function TendersListView() {
             Manage procurement tenders and bids
           </p>
         </div>
-        <Link href="/tenders/add">
-          <Button>Create Tender</Button>
-        </Link>
+        {canCreateTender && (
+          <Link href="/tenders/add">
+            <Button>Create Tender</Button>
+          </Link>
+        )}
       </div>
 
       {/* Stats */}

@@ -24,6 +24,7 @@ import { Loader2, Upload, X, FileText } from "lucide-react";
 import { useMDAs } from "@/hooks/use-mdas";
 import { useUpload } from "@/hooks/use-upload";
 import type { ProcurementFormData } from "./types";
+import { toast } from "sonner";
 
 interface TenderFormViewProps {
   initialData?: ProcurementFormData & { id?: string };
@@ -81,7 +82,7 @@ export function TenderFormView({
         }
       } catch (error) {
         console.error("Upload failed", error);
-        alert("Failed to upload files");
+        toast.error("Failed to upload files");
       }
     }
   };
@@ -128,7 +129,7 @@ export function TenderFormView({
       router.refresh();
     } catch (error) {
       console.error("Submission error:", error);
-      alert(error instanceof Error ? error.message : "An error occurred");
+      toast.error(error instanceof Error ? error.message : "An error occurred");
     } finally {
       setIsSubmitting(false);
     }
