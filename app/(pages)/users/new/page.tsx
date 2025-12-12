@@ -54,7 +54,7 @@ export default function NewUserPage() {
   const [formData, setFormData] = useState<UserFormData>({
     name: "",
     email: "",
-    role: UserRole.MeetingUser,
+    role: "" as UserRole,
     mdaId: "",
     status: "active",
   });
@@ -223,7 +223,7 @@ export default function NewUserPage() {
 
   return (
     <div className="min-h-screen bg-muted/40 p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button

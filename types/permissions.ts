@@ -50,6 +50,13 @@ export type PermissionKey =
   | 'export_project'
   | 'manage_project'
   
+  // Milestone Module
+  | 'create_milestone'
+  | 'view_milestone'
+  | 'edit_milestone'
+  | 'delete_milestone'
+  | 'export_milestone'
+  
   // Submission Module
   | 'create_submission'
   | 'view_submission'
@@ -104,6 +111,8 @@ export type PermissionKey =
   | 'view_bid'
   | 'edit_bid'
   | 'delete_bid'
+  | 'approve_bid'
+  | 'reject_bid'
   | 'export_bid'
   
   // Award Module
@@ -194,6 +203,13 @@ export const ALL_PERMISSION_KEYS: PermissionKey[] = [
   'export_project',
   'manage_project',
   
+  // Milestone
+  'create_milestone',
+  'view_milestone',
+  'edit_milestone',
+  'delete_milestone',
+  'export_milestone',
+  
   // Submission
   'create_submission',
   'view_submission',
@@ -249,6 +265,8 @@ export const ALL_PERMISSION_KEYS: PermissionKey[] = [
   'edit_bid',
   'delete_bid',
   'export_bid',
+  'approve_bid',
+  'reject_bid',
   
   // Award
   'create_award',

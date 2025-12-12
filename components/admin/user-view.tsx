@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Edit } from "lucide-react";
 import { User, UserRole, type UserFormData } from "@/types";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -83,7 +85,14 @@ export default function UserViewClient({ id }: { id: string }) {
     );
   }
 
-  if (!user || !form) return null;
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
+        <h2 className="text-xl font-semibold">User not found</h2>
+        <Button onClick={() => router.push("/users")}>Back to Users</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -117,7 +126,7 @@ export default function UserViewClient({ id }: { id: string }) {
             <div>
               <div className="text-sm text-muted-foreground">MDA</div>
               <div className="font-medium">
-                {(user as User & Record<string, unknown>).mdaName || "-"}
+                {(user as any).mdaName || "-"}
               </div>
             </div>
             <div>
@@ -133,17 +142,15 @@ export default function UserViewClient({ id }: { id: string }) {
             <div>
               <div className="text-sm text-muted-foreground">Last Login</div>
               <div className="font-medium">
-                {(user as User & Record<string, unknown>).lastLogin
-                  ? new Date(
-                      (user as User & Record<string, unknown>).lastLogin as Date
-                    ).toLocaleDateString()
+                {(user as any).lastLogin
+                  ? new Date((user as any).lastLogin).toLocaleDateString()
                   : "Never"}
               </div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Password Status</div>
               <div className="font-medium flex items-center gap-2">
-                {(user as User & Record<string, unknown>).mustChangePassword ? (
+                {(user as any).mustChangePassword ? (
                   <>
                     <XCircle className="h-4 w-4 text-destructive" />
                     <span className="text-destructive">Must Change</span>
@@ -156,13 +163,11 @@ export default function UserViewClient({ id }: { id: string }) {
                 )}
               </div>
             </div>
-            {(user as User & Record<string, unknown>).passwordChangedAt && (
+            {(user as any).passwordChangedAt && (
               <div>
                 <div className="text-sm text-muted-foreground">Password Changed</div>
                 <div className="font-medium">
-                  {new Date(
-                    (user as User & Record<string, unknown>).passwordChangedAt as Date
-                  ).toLocaleDateString()}
+                  {new Date((user as any).passwordChangedAt).toLocaleDateString()}
                 </div>
               </div>
             )}
