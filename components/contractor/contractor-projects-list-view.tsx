@@ -163,7 +163,9 @@ export function ContractorProjectsListView({
       header: "Contractor",
       cell: ({ row }) => (
         <div className="text-sm truncate max-w-[160px]">
-          {row.original.contractor?.name || "N/A"}
+          {row.original.contractor
+            ? `${row.original.contractor.firstname} ${row.original.contractor.lastname}`
+            : "N/A"}
         </div>
       ),
     },
