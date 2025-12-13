@@ -1,26 +1,34 @@
 "use client";
+
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { toast } from "sonner";
+
 import { MilestoneStatusView } from "@/components/contractor/milestone-status-view";
 import { ProjectDetailView } from "@/components/global/project-detail-view";
+import { ContractProjectDetailView } from "@/components/contractor/contract-project-detail-view";
 import { AddMilestoneModal } from "@/components/projects/add-milestone-modal";
+import { ContractAddMilestoneModal } from "@/components/contractor/contract-add-milestone-modal";
+
 import {
   useSubmissions,
   useCreateSubmission,
   useUpdateSubmission,
 } from "@/hooks/use-submissions";
 import { useContract } from "@/hooks/use-contract";
-import { toast } from "sonner";
+
+import { useAuthStore } from "@/store/auth-store";
+import { UserRole, SubmissionStatus } from "@/types";
 import type {
-  MilestoneSubmissionFormInput,
   MilestoneSubmission,
+  MilestoneSubmissionFormInput,
 } from "@/types";
-import { SubmissionStatus } from "@/types";
 
 export default function MilestoneStatusPage() {
   const router = useRouter();
   const params = useParams();
   const projectId = params.id as string;
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMilestone, setEditingMilestone] =
     useState<MilestoneSubmission | null>(null);
@@ -32,20 +40,30 @@ export default function MilestoneStatusPage() {
   const { mutateAsync: updateSubmission, isPending: isUpdating } =
     useUpdateSubmission();
 
+  const currentUser = useAuthStore((s) => s.user);
+  // On the contract page: contractors see ContractProjectDetailView (with edit milestone only)
+  // Non-contractors (supervisors, admins) see ProjectDetailView (with approve/reject)
+  // Determine if user is a contractor either by role OR by being the project contractor
+  const isContractor =
+    currentUser?.role === UserRole.Contractor ||
+    (currentUser && project && project.contractorId === currentUser.id);
+
+  /* -------------------- Handlers -------------------- */
+
   const handleSaveMilestone = async (data: MilestoneSubmissionFormInput) => {
     try {
-      // Contractors always get Pending status
       await createSubmission({
         ...data,
         status: SubmissionStatus.Pending,
         createdAt: new Date(data.createdAt),
         updatedAt: new Date(data.updatedAt),
       });
-      toast.success("Milestone submitted - pending approval");
+
+      toast.success("Milestone submitted (pending approval)");
       refetch();
       setIsModalOpen(false);
-    } catch (error) {
-      console.error("Failed to submit milestone", error);
+    } catch (err) {
+      console.error(err);
       toast.error("Failed to submit milestone");
     }
   };
@@ -60,30 +78,29 @@ export default function MilestoneStatusPage() {
 
     try {
       const { createdAt, updatedAt, ...updateData } = data;
-
-      // If editing rejected milestone, reset to Pending for re-approval
       const isResubmitting =
         editingMilestone.status === SubmissionStatus.Rejected;
 
       await updateSubmission({
         id: editingMilestone.id,
         ...updateData,
-        ...(isResubmitting && { status: SubmissionStatus.Pending }),
+        ...(isResubmitting && {
+          status: SubmissionStatus.Pending,
+        }),
       });
 
-      if (isResubmitting) {
-        toast.success("Milestone re-submitted for approval");
-      } else {
-        toast.success("Milestone updated successfully");
-      }
+      toast.success(
+        isResubmitting
+          ? "Milestone re-submitted for approval"
+          : "Milestone updated"
+      );
 
       refetch();
       setIsModalOpen(false);
       setEditingMilestone(null);
-    } catch (error) {
-      console.error("Failed to update milestone", error);
+    } catch (err) {
+      console.error(err);
       toast.error("Failed to update milestone");
-      throw error;
     }
   };
 
@@ -95,8 +112,7 @@ export default function MilestoneStatusPage() {
       });
       toast.success("Milestone approved");
       refetch();
-    } catch (error) {
-      console.error("Failed to approve milestone", error);
+    } catch (err) {
       toast.error("Failed to approve milestone");
     }
   };
@@ -109,34 +125,30 @@ export default function MilestoneStatusPage() {
       });
       toast.success("Milestone rejected");
       refetch();
-    } catch (error) {
-      console.error("Failed to reject milestone", error);
+    } catch (err) {
       toast.error("Failed to reject milestone");
     }
   };
 
-  const handleBack = () => {
-    router.push("/contract/");
-  };
+  const handleBack = () => router.push("/contract");
+
+  /* -------------------- Render -------------------- */
 
   if (isLoading) return <div>Loading...</div>;
+
+  const projectMilestones =
+    submissions?.filter((s) => s.projectId === projectId) || [];
 
   return (
     <>
       {project ? (
-        <ProjectDetailView
+        // Always use ContractProjectDetailView for contract pages (contractors only see edit)
+        <ContractProjectDetailView
           project={project}
-          milestones={(submissions || []).filter(
-            (s) => s.projectId === projectId
-          )}
+          milestones={projectMilestones}
           onBack={handleBack}
-          onEdit={() => {
-            // navigate to edit page if exists
-            router.push(`/contract/${projectId}/edit`);
-          }}
+          onEdit={() => router.push(`/contract/${projectId}/edit`)}
           onEditMilestone={handleEditMilestone}
-          onApproveMilestone={handleApproveMilestone}
-          onRejectMilestone={handleRejectMilestone}
         />
       ) : (
         <MilestoneStatusView
@@ -148,24 +160,42 @@ export default function MilestoneStatusPage() {
           onEditMilestone={handleEditMilestone}
         />
       )}
-      {project && (
-        <AddMilestoneModal
-          open={isModalOpen}
-          onOpenChange={(open) => {
-            setIsModalOpen(open);
-            if (!open) setEditingMilestone(null);
-          }}
-          project={project}
-          milestones={submissions || []}
-          contractorId={project.contractorId || ""}
-          onSave={
-            editingMilestone ? handleUpdateMilestone : handleSaveMilestone
-          }
-          isSubmitting={editingMilestone ? isUpdating : isSubmitting}
-          milestone={editingMilestone || undefined}
-          userRole="Contractor"
-        />
-      )}
+
+      {project &&
+        (isContractor ? (
+          <ContractAddMilestoneModal
+            open={isModalOpen}
+            onOpenChange={(open) => {
+              setIsModalOpen(open);
+              if (!open) setEditingMilestone(null);
+            }}
+            project={project}
+            milestones={projectMilestones}
+            contractorId={project.contractorId || ""}
+            onSave={
+              editingMilestone ? handleUpdateMilestone : handleSaveMilestone
+            }
+            isSubmitting={editingMilestone ? isUpdating : isSubmitting}
+            milestone={editingMilestone || undefined}
+          />
+        ) : (
+          <AddMilestoneModal
+            open={isModalOpen}
+            onOpenChange={(open) => {
+              setIsModalOpen(open);
+              if (!open) setEditingMilestone(null);
+            }}
+            project={project}
+            milestones={projectMilestones}
+            contractorId={project.contractorId || ""}
+            onSave={
+              editingMilestone ? handleUpdateMilestone : handleSaveMilestone
+            }
+            isSubmitting={editingMilestone ? isUpdating : isSubmitting}
+            milestone={editingMilestone || undefined}
+            userRole="Admin"
+          />
+        ))}
     </>
   );
 }

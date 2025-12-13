@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import {
   ArrowLeft,
@@ -9,12 +10,7 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  Plus,
-  Check,
-  X,
 } from "lucide-react";
-import { useAuthStore } from "@/store/auth-store";
-import { UserRole } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useProjectPermissions } from "@/hooks/use-project-permissions";
@@ -38,22 +34,15 @@ import {
   getStatusColor,
   getMilestoneStageLabel,
 } from "@/components/projects-manager/utils";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Milestone Card Component with collapsible evidence
-function MilestoneCard({
+// Milestone Card for contractor view (no approve/reject buttons)
+function MilestoneCardContractor({
   milestone,
   onEditMilestone,
-  onApproveMilestone,
-  onRejectMilestone,
 }: {
   milestone: MilestoneSubmission;
   onEditMilestone?: (milestone: MilestoneSubmission) => void;
-  onApproveMilestone?: (milestone: MilestoneSubmission) => void;
-  onRejectMilestone?: (milestone: MilestoneSubmission) => void;
 }) {
-  const currentUser = useAuthStore((s) => s.user);
-  const isContractor = currentUser?.role === UserRole.Contractor;
   const [showAllDocs, setShowAllDocs] = useState(false);
   const visibleDocs = showAllDocs
     ? milestone.evidenceDocs
@@ -113,7 +102,6 @@ function MilestoneCard({
               </p>
             )}
 
-            {/* Evidence section - moved below details */}
             {milestone.evidenceDocs.length > 0 && (
               <div className="mt-2 pt-2 border-t">
                 <div className="flex items-center justify-between mb-1.5">
@@ -148,7 +136,7 @@ function MilestoneCard({
             )}
           </div>
 
-          {/* Action buttons - moved to extreme right */}
+          {/* Action buttons - only Edit button for contractors */}
           <div className="flex flex-col gap-1.5">
             {onEditMilestone && (
               <Button
@@ -161,32 +149,6 @@ function MilestoneCard({
                 Edit
               </Button>
             )}
-            {milestone.status === SubmissionStatus.Pending &&
-              !isContractor &&
-              onApproveMilestone && (
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => onApproveMilestone(milestone)}
-                  className="bg-green-600 hover:bg-green-700 h-8 text-xs"
-                >
-                  <Check className="h-3 w-3 mr-1" />
-                  Approve
-                </Button>
-              )}
-            {milestone.status === SubmissionStatus.Pending &&
-              !isContractor &&
-              onRejectMilestone && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => onRejectMilestone(milestone)}
-                  className="h-8 text-xs"
-                >
-                  <X className="h-3 w-3 mr-1" />
-                  Reject
-                </Button>
-              )}
           </div>
         </div>
       </CardContent>
@@ -194,24 +156,21 @@ function MilestoneCard({
   );
 }
 
-export function ProjectDetailView({
+export function ContractProjectDetailView({
   project,
   milestones,
   onBack,
   onEdit,
   onEditMilestone,
-  onApproveMilestone,
-  onRejectMilestone,
 }: {
   project: Project;
   milestones: MilestoneSubmission[];
   onBack: () => void;
   onEdit: () => void;
   onEditMilestone?: (milestone: MilestoneSubmission) => void;
-  onApproveMilestone?: (milestone: MilestoneSubmission) => void;
-  onRejectMilestone?: (milestone: MilestoneSubmission) => void;
 }) {
   const permissions = useProjectPermissions();
+
   const getStatusIcon = (status: ProjectStatus) => {
     const icons = {
       [ProjectStatus.Planned]: Clock,
@@ -232,7 +191,6 @@ export function ProjectDetailView({
     return Math.round(total / Math.max(1, milestones.length));
   };
 
-  // Helper function to safely convert to ISO string
   const toISOString = (date: Date | string): string => {
     if (typeof date === "string") return date;
     return date.toISOString();
@@ -460,22 +418,6 @@ export function ProjectDetailView({
                 Contractor milestone submissions for this project
               </CardDescription>
             </div>
-            {project.contractorId && (
-              <Button
-                onClick={() => {
-                  // This will be handled by parent component
-                  if (
-                    typeof window !== "undefined" &&
-                    (window as any).openMilestoneModal
-                  ) {
-                    (window as any).openMilestoneModal();
-                  }
-                }}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add Milestone
-              </Button>
-            )}
           </div>
         </CardHeader>
 
@@ -494,12 +436,10 @@ export function ProjectDetailView({
           ) : (
             <div className="space-y-4 max-h-[55vh] overflow-y-auto">
               {milestones.map((milestone) => (
-                <MilestoneCard
+                <MilestoneCardContractor
                   key={milestone.id}
                   milestone={milestone}
                   onEditMilestone={onEditMilestone}
-                  onApproveMilestone={onApproveMilestone}
-                  onRejectMilestone={onRejectMilestone}
                 />
               ))}
             </div>
