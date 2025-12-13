@@ -58,7 +58,9 @@ export function AddMilestoneModal({
   const isEditMode = !!milestone;
   const isContractor = userRole === "Contractor";
   const { mutateAsync: uploadFile, isPending: isUploading } = useUpload();
-  const [evidenceDocs, setEvidenceDocs] = useState<string[]>(milestone?.evidenceDocs || []);
+  const [evidenceDocs, setEvidenceDocs] = useState<string[]>(
+    milestone?.evidenceDocs || []
+  );
   const [formData, setFormData] = useState({
     milestoneStage: milestone?.milestoneStage || "",
     percentComplete: milestone?.percentComplete || 0,
@@ -70,12 +72,21 @@ export function AddMilestoneModal({
   // Update form data when milestone changes (for editing different milestones)
   useEffect(() => {
     if (milestone) {
+      const lat =
+        milestone.geoTag && Array.isArray(milestone.geoTag.coordinates)
+          ? String(milestone.geoTag.coordinates[1] ?? "")
+          : "";
+      const lon =
+        milestone.geoTag && Array.isArray(milestone.geoTag.coordinates)
+          ? String(milestone.geoTag.coordinates[0] ?? "")
+          : "";
+
       setFormData({
         milestoneStage: milestone.milestoneStage || "",
         percentComplete: milestone.percentComplete || 0,
         notes: milestone.notes || "",
-        latitude: "",
-        longitude: "",
+        latitude: lat,
+        longitude: lon,
       });
       setEvidenceDocs(milestone.evidenceDocs || []);
     }
@@ -88,7 +99,9 @@ export function AddMilestoneModal({
     try {
       const uploadPromises = Array.from(files).map((file) => uploadFile(file));
       const results = await Promise.all(uploadPromises);
-      const urls = results.filter((res) => res !== undefined).map((res) => res.url);
+      const urls = results
+        .filter((res) => res !== undefined)
+        .map((res) => res.url);
       setEvidenceDocs((prev) => [...prev, ...urls]);
       toast.success("Files uploaded successfully");
     } catch (error) {
@@ -171,12 +184,16 @@ export function AddMilestoneModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? "Edit" : "Add"} Milestone Submission</DialogTitle>
+          <DialogTitle>
+            {isEditMode ? "Edit" : "Add"} Milestone Submission
+          </DialogTitle>
           <DialogDescription>
-            {isEditMode ? "Update milestone for" : "Submit a new milestone for"} {project.title}
+            {isEditMode ? "Update milestone for" : "Submit a new milestone for"}{" "}
+            {project.title}
             {isContractor && isEditMode && (
               <span className="block mt-2 text-sm text-muted-foreground">
-                Note: You can only add/remove documents. Contact supervisor to update progress.
+                Note: You can add/remove documents, update notes and location.
+                Contact supervisor to update progress or percent complete.
               </span>
             )}
           </DialogDescription>
@@ -208,9 +225,7 @@ export function AddMilestoneModal({
           </div>
 
           <div className="space-y-2">
-            <Label>
-              Percent Complete: {formData.percentComplete}%
-            </Label>
+            <Label>Percent Complete: {formData.percentComplete}%</Label>
             <Slider
               value={[formData.percentComplete]}
               onValueChange={([value]) =>
@@ -233,7 +248,7 @@ export function AddMilestoneModal({
               }
               rows={3}
               placeholder="Add any notes about this milestone..."
-              disabled={isSubmitting || (isEditMode && isContractor)}
+              disabled={isSubmitting}
             />
           </div>
 
@@ -260,7 +275,10 @@ export function AddMilestoneModal({
                 step="any"
                 value={formData.longitude}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, longitude: e.target.value }))
+                  setFormData((prev) => ({
+                    ...prev,
+                    longitude: e.target.value,
+                  }))
                 }
                 placeholder="e.g., 3.3792"
                 disabled={isSubmitting}
@@ -333,8 +351,10 @@ export function AddMilestoneModal({
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   {isEditMode ? "Updating..." : "Submitting..."}
                 </>
+              ) : isEditMode ? (
+                "Update Milestone"
               ) : (
-                isEditMode ? "Update Milestone" : "Submit Milestone"
+                "Submit Milestone"
               )}
             </Button>
           </DialogFooter>
