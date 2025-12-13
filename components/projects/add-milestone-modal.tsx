@@ -72,9 +72,14 @@ export function AddMilestoneModal({
     longitude: "",
   });
 
-  // Initialize form data when milestone is provided
+  // Initialize form data when modal opens or milestone changes
   useEffect(() => {
-    if (milestone && open) {
+    if (!open) {
+      return; // Don't do anything if modal is closed
+    }
+
+    if (milestone) {
+      // Edit mode: load milestone data
       const lat =
         milestone.geoTag && Array.isArray(milestone.geoTag.coordinates)
           ? String(milestone.geoTag.coordinates[1] ?? "")
@@ -99,14 +104,15 @@ export function AddMilestoneModal({
         longitude: lon,
       });
       setEvidenceDocs(milestone.evidenceDocs || []);
-      setUseGpsLocation(!!(lat && lon));
-    }
-  }, [milestone, open]);
-
-  // Handle modal open/close
-  useEffect(() => {
-    if (!open && !milestone) {
-      // Reset form when closing without a milestone in edit mode
+      // In edit mode, NEVER auto-check GPS to prevent overwriting correct location
+      // User must explicitly check to update location
+      console.log(
+        "Edit mode: keeping GPS unchecked to prevent overwriting location"
+      );
+      setUseGpsLocation(false);
+    } else {
+      // Create mode: reset form
+      console.log("Create mode: resetting form");
       setFormData({
         milestoneStage: "",
         percentComplete: 0,
@@ -117,7 +123,7 @@ export function AddMilestoneModal({
       setEvidenceDocs([]);
       setUseGpsLocation(false);
     }
-  }, [open]);
+  }, [open, milestone?.id]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;

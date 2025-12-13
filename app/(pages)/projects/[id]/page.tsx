@@ -38,7 +38,10 @@ export default function ProjectDetailPage() {
 
   // Expose modal opener to window for ProjectDetailView button
   if (typeof window !== "undefined") {
-    (window as any).openMilestoneModal = () => setIsModalOpen(true);
+    (window as any).openMilestoneModal = () => {
+      setEditingMilestone(null); // Clear any previous edit
+      setIsModalOpen(true);
+    };
   }
 
   const handleSaveMilestone = async (data: MilestoneSubmissionFormInput) => {
