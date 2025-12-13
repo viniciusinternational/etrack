@@ -113,100 +113,100 @@ export function ContractorProjectsListView({
       <Card>
         <CardHeader>
           <CardTitle>Projects</CardTitle>
-          <CardDescription>
-            Showing {projects.length} projects
-          </CardDescription>
+          <CardDescription>Showing {projects.length} projects</CardDescription>
         </CardHeader>
 
         <CardContent>
           <GlobalTable
             data={projects}
             columns={(() => {
-  const cols: ColumnDef<Project>[] = [
-    {
-      accessorKey: "title",
-      header: "Project",
-      cell: ({ row }) => (
-        <div className="max-w-[220px]">
-          <div className="font-medium text-foreground truncate">
-            {row.original.title}
-          </div>
-          <div className="text-sm text-muted-foreground truncate">
-            {row.original.description}
-          </div>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "category",
-      header: "Category",
-      cell: ({ row }) => (
-        <Badge
-          variant="secondary"
-          className={getCategoryColor(row.original.category)}
-        >
-          {row.original.category}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: "supervisingMda.name",
-      header: "MDA",
-      cell: ({ row }) => (
-        <div className="text-sm truncate max-w-[160px]">
-          {row.original.supervisingMda?.name || "N/A"}
-        </div>
-      ),
-    },
-    {
-      accessorKey: "contractor.name",
-      header: "Contractor",
-      cell: ({ row }) => (
-        <div className="text-sm truncate max-w-[160px]">
-          {row.original.contractor
-            ? `${row.original.contractor.firstname} ${row.original.contractor.lastname}`
-            : "N/A"}
-        </div>
-      ),
-    },
-    {
-      accessorKey: "contractValue",
-      header: "Value",
-      cell: ({ row }) => (
-        <div className="text-sm font-medium">
-          ₦{numeral(row.original.contractValue).format("0.0a").toUpperCase()}
-        </div>
-      ),
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => (
-        <Badge
-          variant="secondary"
-          className={getStatusColor(row.original.status)}
-        >
-          {row.original.status}
-        </Badge>
-      ),
-    },
-    {
-      id: "timeline",
-      header: "Timeline",
-      cell: ({ row }) => {
-        const start = row.original.startDate;
-        const end = row.original.endDate;
-        return (
-          <div className="text-sm text-muted-foreground whitespace-nowrap">
-            {formatDate(start)} – {formatDate(end)}
-          </div>
-        );
-      },
-    },
-  ];
-  return cols;
-})()}
-
+              const cols: ColumnDef<Project>[] = [
+                {
+                  accessorKey: "title",
+                  header: "Project",
+                  cell: ({ row }) => (
+                    <div className="max-w-[220px]">
+                      <div className="font-medium text-foreground truncate">
+                        {row.original.title}
+                      </div>
+                      <div className="text-sm text-muted-foreground truncate">
+                        {row.original.description}
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  accessorKey: "category",
+                  header: "Category",
+                  cell: ({ row }) => (
+                    <Badge
+                      variant="secondary"
+                      className={getCategoryColor(row.original.category)}
+                    >
+                      {row.original.category}
+                    </Badge>
+                  ),
+                },
+                {
+                  accessorKey: "supervisingMda.name",
+                  header: "MDA",
+                  cell: ({ row }) => (
+                    <div className="text-sm truncate max-w-[160px]">
+                      {row.original.supervisingMda?.name || "N/A"}
+                    </div>
+                  ),
+                },
+                {
+                  accessorKey: "contractor.name",
+                  header: "Contractor",
+                  cell: ({ row }) => (
+                    <div className="text-sm truncate max-w-[160px]">
+                      {row.original.contractor
+                        ? `${row.original.contractor.firstname} ${row.original.contractor.lastname}`
+                        : "N/A"}
+                    </div>
+                  ),
+                },
+                {
+                  accessorKey: "contractValue",
+                  header: "Value",
+                  cell: ({ row }) => (
+                    <div className="text-sm font-medium">
+                      ₦
+                      {numeral(row.original.contractValue)
+                        .format("0.0a")
+                        .toUpperCase()}
+                    </div>
+                  ),
+                },
+                {
+                  accessorKey: "status",
+                  header: "Status",
+                  cell: ({ row }) => (
+                    <Badge
+                      variant="secondary"
+                      className={getStatusColor(row.original.status)}
+                    >
+                      {row.original.status}
+                    </Badge>
+                  ),
+                },
+                {
+                  id: "timeline",
+                  header: "Timeline",
+                  cell: ({ row }) => {
+                    const start = row.original.startDate;
+                    const end = row.original.endDate;
+                    return (
+                      <div className="text-sm text-muted-foreground whitespace-nowrap">
+                        {formatDate(start)} – {formatDate(end)}
+                      </div>
+                    );
+                  },
+                },
+              ];
+              return cols;
+            })()}
             title="Projects"
             rowClickHref={(row) => `/contract/${row.id}/status`}
           />
