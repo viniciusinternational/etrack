@@ -19,6 +19,7 @@ import {
   FileSpreadsheet,
   Upload,
   Award,
+  MessageSquare,
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -153,6 +154,14 @@ export const navigationConfig: NavigationItem[] = [
     icon: FileSpreadsheet,
     href: '/reports',
     permissions: ['view_dashboard'], // Use dashboard view permission for reports
+  },
+  // AI Assistant Module
+  {
+    id: 'ai-assistant',
+    label: 'AI Assistant',
+    icon: MessageSquare,
+    href: '/ai-assistant',
+    permissions: ['view_ai_assistant'],
   },
 ];
 

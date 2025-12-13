@@ -156,7 +156,10 @@ export type PermissionKey =
   | 'view_contract'
   | 'edit_contract'
   | 'delete_contract'
-  | 'export_contract';
+  | 'export_contract'
+  
+  // AI Assistant Module
+  | 'view_ai_assistant';
 
 /**
  * Permission record type - maps permission keys to boolean values
@@ -307,6 +310,9 @@ export const ALL_PERMISSION_KEYS: PermissionKey[] = [
   'edit_contract',
   'delete_contract',
   'export_contract',
+  
+  // AI Assistant
+  'view_ai_assistant',
 ] as const;
 
 /**

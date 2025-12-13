@@ -52,10 +52,14 @@ function groupPermissionsByModule(permissionKeys: PermissionKey[]): Record<strin
 }
 
 /**
- * Format module name for display (capitalize first letter)
+ * Format module name for display (capitalize first letter of each word)
+ * Handles underscores by converting to spaces and capitalizing each word
  */
 function formatModuleName(module: string): string {
-  return module.charAt(0).toUpperCase() + module.slice(1);
+  return module
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 /**

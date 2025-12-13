@@ -51,6 +51,7 @@ function convertPermissionFormat(module: string, action: string): PermissionKey 
     PAYMENT: 'payment',
     DASHBOARD: 'dashboard',
     CONTRACT: 'contract',
+    AI_ASSISTANT: 'ai_assistant',
   };
 
   const newAction = actionMap[action];
