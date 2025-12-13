@@ -39,10 +39,14 @@ export function ContractorProjectsListView({
       (s) => s.projectId === projectId
     );
     if (projectSubmissions.length === 0) return 0;
-    const avgProgress =
-      projectSubmissions.reduce((sum, s) => sum + s.percentComplete, 0) /
-      projectSubmissions.length;
-    return Math.round(avgProgress);
+    // Progress is based on the count of approved milestones relative to total milestones
+    const approvedCount = projectSubmissions.filter(
+      (s) => s.status === "Approved"
+    ).length;
+    const progress = Math.round(
+      (approvedCount / projectSubmissions.length) * 100
+    );
+    return progress;
   };
 
   return (

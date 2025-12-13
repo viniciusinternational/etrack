@@ -5,13 +5,19 @@ import { notFound } from "next/navigation";
 import { ProjectDetailView } from "@/components/global/project-detail-view";
 import { AddMilestoneModal } from "@/components/projects/add-milestone-modal";
 import { useProject } from "@/hooks/use-projects";
-import { useCreateSubmission, useUpdateSubmission } from "@/hooks/use-submissions";
-import { useProject as useProjectQuery } from "@/hooks/use-projects";
+import {
+  useCreateSubmission,
+  useUpdateSubmission,
+  useSubmissions,
+} from "@/hooks/use-submissions";
 import { useAuthStore } from "@/store/auth-store";
 import { hasPermission } from "@/lib/permissions";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import type { MilestoneSubmissionFormInput, MilestoneSubmission } from "@/types";
+import type {
+  MilestoneSubmissionFormInput,
+  MilestoneSubmission,
+} from "@/types";
 import { SubmissionStatus } from "@/types";
 
 export default function ProjectDetailPage() {
@@ -19,15 +25,19 @@ export default function ProjectDetailPage() {
   const params = useParams();
   const projectId = params.id as string;
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingMilestone, setEditingMilestone] = useState<MilestoneSubmission | null>(null);
+  const [editingMilestone, setEditingMilestone] =
+    useState<MilestoneSubmission | null>(null);
   const { user } = useAuthStore();
 
   const { data: project, isLoading, error, refetch } = useProject(projectId);
-  const { mutateAsync: createSubmission, isPending: isSubmitting } = useCreateSubmission();
-  const { mutateAsync: updateSubmission, isPending: isUpdating } = useUpdateSubmission();
+  const { data: submissions = [] } = useSubmissions();
+  const { mutateAsync: createSubmission, isPending: isSubmitting } =
+    useCreateSubmission();
+  const { mutateAsync: updateSubmission, isPending: isUpdating } =
+    useUpdateSubmission();
 
   // Expose modal opener to window for ProjectDetailView button
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     (window as any).openMilestoneModal = () => setIsModalOpen(true);
   }
 
@@ -35,25 +45,27 @@ export default function ProjectDetailPage() {
     try {
       // Determine status based on user role
       // Supervisors and Admins get auto-approved, Contractors need approval
-      const isAutoApproved = user && (
-        user.role === 'SuperAdmin' ||
-        user.role === 'Admin' ||
-        user.role === 'ProjectManager'
-      );
+      const isAutoApproved =
+        user &&
+        (user.role === "SuperAdmin" ||
+          user.role === "Admin" ||
+          user.role === "ProjectManager");
 
       await createSubmission({
         ...data,
-        status: isAutoApproved ? SubmissionStatus.Approved : SubmissionStatus.Pending,
+        status: isAutoApproved
+          ? SubmissionStatus.Approved
+          : SubmissionStatus.Pending,
         createdAt: new Date(data.createdAt),
         updatedAt: new Date(data.updatedAt),
       });
-      
+
       if (isAutoApproved) {
         toast.success("Milestone added and approved automatically");
       } else {
         toast.success("Milestone added successfully - pending approval");
       }
-      
+
       refetch(); // Refresh project data to get new milestone
       setIsModalOpen(false);
     } catch (error) {
@@ -70,28 +82,28 @@ export default function ProjectDetailPage() {
 
   const handleUpdateMilestone = async (data: MilestoneSubmissionFormInput) => {
     if (!editingMilestone) return;
-    
+
     try {
       // Don't include createdAt/updatedAt in update - API handles these
       const { createdAt, updatedAt, ...updateData } = data;
-      
+
       // If editing a rejected milestone and user is contractor, reset to Pending for re-approval
-      const isContractorResubmitting = 
-        user?.role === 'Contractor' && 
+      const isContractorResubmitting =
+        user?.role === "Contractor" &&
         editingMilestone.status === SubmissionStatus.Rejected;
-      
+
       await updateSubmission({
         id: editingMilestone.id,
         ...updateData,
         ...(isContractorResubmitting && { status: SubmissionStatus.Pending }),
       });
-      
+
       if (isContractorResubmitting) {
         toast.success("Milestone re-submitted for approval");
       } else {
         toast.success("Milestone updated successfully");
       }
-      
+
       refetch(); // Refresh project data
       setIsModalOpen(false);
       setEditingMilestone(null);
@@ -103,7 +115,7 @@ export default function ProjectDetailPage() {
   };
 
   const handleApproveMilestone = async (milestone: MilestoneSubmission) => {
-    if (!user || !hasPermission(user as any, 'approve_submission')) {
+    if (!user || !hasPermission(user as any, "approve_submission")) {
       toast.error("You don't have permission to approve milestones");
       return;
     }
@@ -122,7 +134,7 @@ export default function ProjectDetailPage() {
   };
 
   const handleRejectMilestone = async (milestone: MilestoneSubmission) => {
-    if (!user || !hasPermission(user as any, 'reject_submission')) {
+    if (!user || !hasPermission(user as any, "reject_submission")) {
       toast.error("You don't have permission to reject milestones");
       return;
     }
@@ -156,12 +168,20 @@ export default function ProjectDetailPage() {
     <>
       <ProjectDetailView
         project={project}
-        milestones={project.milestones || []}
+        milestones={submissions.filter((s) => s.projectId === projectId)}
         onBack={() => router.back()}
         onEdit={() => router.push(`/projects/${projectId}/edit`)}
         onEditMilestone={handleEditMilestone}
-        onApproveMilestone={user && hasPermission(user as any, 'approve_submission') ? handleApproveMilestone : undefined}
-        onRejectMilestone={user && hasPermission(user as any, 'reject_submission') ? handleRejectMilestone : undefined}
+        onApproveMilestone={
+          user && hasPermission(user as any, "approve_submission")
+            ? handleApproveMilestone
+            : undefined
+        }
+        onRejectMilestone={
+          user && hasPermission(user as any, "reject_submission")
+            ? handleRejectMilestone
+            : undefined
+        }
       />
       {project.contractorId && (
         <AddMilestoneModal
@@ -171,9 +191,11 @@ export default function ProjectDetailPage() {
             if (!open) setEditingMilestone(null);
           }}
           project={project}
-          milestones={project.milestones || []}
+          milestones={submissions.filter((s) => s.projectId === projectId)}
           contractorId={project.contractorId}
-          onSave={editingMilestone ? handleUpdateMilestone : handleSaveMilestone}
+          onSave={
+            editingMilestone ? handleUpdateMilestone : handleSaveMilestone
+          }
           isSubmitting={editingMilestone ? isUpdating : isSubmitting}
           milestone={editingMilestone || undefined}
           userRole={user?.role}
