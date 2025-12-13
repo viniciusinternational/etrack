@@ -22,6 +22,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   MilestoneStage,
   SubmissionStatus,
@@ -61,6 +62,8 @@ export function AddMilestoneModal({
   const [evidenceDocs, setEvidenceDocs] = useState<string[]>(
     milestone?.evidenceDocs || []
   );
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [useGpsLocation, setUseGpsLocation] = useState(false);
   const [formData, setFormData] = useState({
     milestoneStage: milestone?.milestoneStage || "",
     percentComplete: milestone?.percentComplete || 0,
@@ -177,6 +180,39 @@ export function AddMilestoneModal({
         longitude: "",
       });
       setEvidenceDocs([]);
+      setUseGpsLocation(false);
+    }
+  };
+
+  const handleGetGpsLocation = async () => {
+    setIsGettingLocation(true);
+    try {
+      if (!navigator.geolocation) {
+        toast.error("Geolocation is not supported by your browser");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setFormData((prev) => ({
+            ...prev,
+            latitude: latitude.toString(),
+            longitude: longitude.toString(),
+          }));
+          toast.success("Location obtained successfully");
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          toast.error(
+            `Failed to get location: ${
+              error.message || "Permission denied or location unavailable"
+            }`
+          );
+        }
+      );
+    } finally {
+      setIsGettingLocation(false);
     }
   };
 
@@ -252,37 +288,69 @@ export function AddMilestoneModal({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="latitude">Latitude (optional)</Label>
-              <Input
-                id="latitude"
-                type="number"
-                step="any"
-                value={formData.latitude}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, latitude: e.target.value }))
-                }
-                placeholder="e.g., 6.5244"
-                disabled={isSubmitting}
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="use-gps"
+                checked={useGpsLocation}
+                onCheckedChange={(checked) => {
+                  setUseGpsLocation(!!checked);
+                  if (checked) {
+                    handleGetGpsLocation();
+                  }
+                }}
+                disabled={isSubmitting || isGettingLocation}
               />
+              <Label
+                htmlFor="use-gps"
+                className="font-normal cursor-pointer flex items-center gap-2"
+              >
+                {isGettingLocation ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Getting location...
+                  </>
+                ) : (
+                  "Use phone GPS location"
+                )}
+              </Label>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="longitude">Longitude (optional)</Label>
-              <Input
-                id="longitude"
-                type="number"
-                step="any"
-                value={formData.longitude}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    longitude: e.target.value,
-                  }))
-                }
-                placeholder="e.g., 3.3792"
-                disabled={isSubmitting}
-              />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="latitude">Latitude (optional)</Label>
+                <Input
+                  id="latitude"
+                  type="number"
+                  step="any"
+                  value={formData.latitude}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      latitude: e.target.value,
+                    }))
+                  }
+                  placeholder="e.g., 6.5244"
+                  disabled={isSubmitting}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="longitude">Longitude (optional)</Label>
+                <Input
+                  id="longitude"
+                  type="number"
+                  step="any"
+                  value={formData.longitude}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      longitude: e.target.value,
+                    }))
+                  }
+                  placeholder="e.g., 3.3792"
+                  disabled={isSubmitting}
+                />
+              </div>
             </div>
           </div>
 
