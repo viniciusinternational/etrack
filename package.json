@@ -21,6 +21,9 @@
     "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@assistant-ui/react": "^0.11.51",
+    "@assistant-ui/react-ai-sdk": "^1.1.19",
+    "@assistant-ui/react-markdown": "^0.11.8",
     "@prisma/client": "^6.18.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -50,6 +53,7 @@
     "react-big-calendar": "^1.19.4",
     "react-dom": "19.2.1",
     "recharts": "^2.15.4",
+    "remark-gfm": "^4.0.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",

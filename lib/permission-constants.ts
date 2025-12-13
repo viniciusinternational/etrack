@@ -23,6 +23,7 @@ export enum PermissionModule {
   PAYMENT = "PAYMENT",
   DASHBOARD = "DASHBOARD",
   CONTRACT = "CONTRACT",
+  AI_ASSISTANT = "AI_ASSISTANT",
 }
 
 // All actions available in the system
@@ -181,6 +182,9 @@ export const ALL_PERMISSIONS: PermissionDefinition[] = [
   { module: PermissionModule.CONTRACT, action: PermissionAction.UPDATE, description: "Edit contracts" },
   { module: PermissionModule.CONTRACT, action: PermissionAction.DELETE, description: "Delete contracts" },
   { module: PermissionModule.CONTRACT, action: PermissionAction.EXPORT, description: "Export contract data" },
+
+  // AI_ASSISTANT permissions
+  { module: PermissionModule.AI_ASSISTANT, action: PermissionAction.READ, description: "View and use AI assistant" },
 ];
 
 // Helper function to get permission key
