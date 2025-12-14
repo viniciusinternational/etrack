@@ -12,37 +12,77 @@ const createTemplateSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const authResult = await requireAuth(request, ['view_user']);
+    console.log("GET /role-permission-templates called");
+
+    const authResult = await requireAuth(request, ["view_user"]);
     if (authResult instanceof NextResponse) {
+      console.log("Auth failed");
       return authResult;
     }
 
     const { searchParams } = new URL(request.url);
     const role = searchParams.get("role");
+    console.log("Role parameter:", role);
 
     if (role) {
-      // Get template for specific role
-      const template = await prisma.rolePermissionTemplate.findUnique({
-        where: { role: role as UserRole },
-      });
+      // Validate that role is a valid UserRole enum
+      const validRoles = Object.values(UserRole);
+      console.log("Valid roles:", validRoles);
 
-      // Return empty permissions if no template found
-      return NextResponse.json({ 
-        ok: true, 
-        data: template || { role, permissions: [] }
-      });
+      if (!validRoles.includes(role as UserRole)) {
+        console.log(`Invalid role: ${role}`);
+        return NextResponse.json(
+          {
+            ok: false,
+            error: `Invalid role: ${role}. Valid roles are: ${validRoles.join(
+              ", "
+            )}`,
+          },
+          { status: 400 }
+        );
+      }
+
+      // Get template for specific role
+      try {
+        console.log("Fetching template for role:", role);
+        const template = await prisma.rolePermissionTemplate.findUnique({
+          where: { role: role as UserRole },
+        });
+
+        console.log("Template found:", template ? "yes" : "no");
+
+        // Return empty permissions if no template found
+        const response = {
+          ok: true,
+          data: template || { role, permissions: [] },
+        };
+
+        return NextResponse.json(response);
+      } catch (dbError) {
+        console.error("Database error fetching template:", dbError);
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "Failed to fetch template from database",
+            details: String(dbError),
+          },
+          { status: 500 }
+        );
+      }
     }
 
     // Get all templates
+    console.log("Fetching all templates");
     const templates = await prisma.rolePermissionTemplate.findMany({
       orderBy: { role: "asc" },
     });
 
+    console.log("Templates fetched:", templates.length);
     return NextResponse.json({ ok: true, data: templates });
   } catch (error) {
     console.error("Error fetching role permission templates:", error);
     return NextResponse.json(
-      { ok: false, error: "Failed to fetch templates" },
+      { ok: false, error: "Failed to fetch templates", details: String(error) },
       { status: 500 }
     );
   }
@@ -50,7 +90,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const authResult = await requireAuth(request, ['manage_permissions']);
+    const authResult = await requireAuth(request, ["manage_permissions"]);
     if (authResult instanceof NextResponse) {
       return authResult;
     }
@@ -60,9 +100,9 @@ export async function POST(request: NextRequest) {
 
     const template = await prisma.rolePermissionTemplate.upsert({
       where: { role: validatedData.role },
-      update: { 
+      update: {
         permissions: validatedData.permissions,
-        description: validatedData.description 
+        description: validatedData.description,
       },
       create: validatedData,
     });
@@ -85,7 +125,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const authResult = await requireAuth(request, ['manage_permissions']);
+    const authResult = await requireAuth(request, ["manage_permissions"]);
     if (authResult instanceof NextResponse) {
       return authResult;
     }

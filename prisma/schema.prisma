@@ -533,13 +533,15 @@ model AuditLog {
 model RolePermissionTemplate {
   id          String   @id @default(cuid())
   role        UserRole @unique
-  permissions Json     // Array of permission keys: ["view_user", "create_user", ...]
-  description String?  // Optional: Description of what this role typically does
+  permissions Json
+  description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([role])
+  @@map("role_permission_templates")
 }
+
 
 // =====================================================
 // PERMISSIONS
