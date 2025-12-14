@@ -12,25 +12,19 @@ const createTemplateSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    console.log("GET /role-permission-templates called");
-
     const authResult = await requireAuth(request, ["view_user"]);
     if (authResult instanceof NextResponse) {
-      console.log("Auth failed");
       return authResult;
     }
 
     const { searchParams } = new URL(request.url);
     const role = searchParams.get("role");
-    console.log("Role parameter:", role);
 
     if (role) {
       // Validate that role is a valid UserRole enum
       const validRoles = Object.values(UserRole);
-      console.log("Valid roles:", validRoles);
 
       if (!validRoles.includes(role as UserRole)) {
-        console.log(`Invalid role: ${role}`);
         return NextResponse.json(
           {
             ok: false,
@@ -44,12 +38,9 @@ export async function GET(request: NextRequest) {
 
       // Get template for specific role
       try {
-        console.log("Fetching template for role:", role);
         const template = await prisma.rolePermissionTemplate.findUnique({
           where: { role: role as UserRole },
         });
-
-        console.log("Template found:", template ? "yes" : "no");
 
         // Return empty permissions if no template found
         const response = {
@@ -72,12 +63,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all templates
-    console.log("Fetching all templates");
     const templates = await prisma.rolePermissionTemplate.findMany({
       orderBy: { role: "asc" },
     });
-
-    console.log("Templates fetched:", templates.length);
     return NextResponse.json({ ok: true, data: templates });
   } catch (error) {
     console.error("Error fetching role permission templates:", error);
