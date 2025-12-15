@@ -1,18 +1,342 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql" // Defaulting to PostgreSQL, change if needed
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// =====================================================
-// ENUMS
-// =====================================================
+model User {
+  id                  String                @id @default(cuid())
+  email               String                @unique
+  role                UserRole
+  mdaId               String?
+  password            String?
+  status              String                @default("active")
+  lastLogin           DateTime?
+  mustChangePassword  Boolean               @default(false)
+  passwordChangedAt   DateTime?
+  permissions         Json?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  firstname           String
+  lastname            String
+  awards              Award[]
+  bids                Bid[]
+  discrepancies       DiscrepancyRemark[]
+  submittedMilestones MilestoneSubmission[] @relation("ContractorSubmission")
+  reviewedMilestones  MilestoneSubmission[] @relation("Reviewer")
+  createdPayments     Payment[]             @relation("CreatedPayments")
+  submittedPayments   Payment[]             @relation("SubmittedPayments")
+  contractorProjects  Project[]             @relation("Contractor")
+  supervisedProjects  Project[]             @relation("Supervisor")
+  mda                 MDA?                  @relation(fields: [mdaId], references: [id])
+}
+
+model MDA {
+  id                  String               @id @default(cuid())
+  name                String
+  category            String
+  description         String?
+  headOfMda           String?
+  email               String?
+  phone               String?
+  address             String?
+  isActive            Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  budgetAllocations   BudgetAllocation[]
+  procurementRequests ProcurementRequest[]
+  supervisedProjects  Project[]
+  revenues            Revenue[]
+  users               User[]
+}
+
+model Project {
+  id               String                @id @default(cuid())
+  title            String
+  description      String
+  category         ProjectCategory
+  supervisingMdaId String?
+  contractorId     String?
+  contractValue    Float
+  startDate        DateTime
+  endDate          DateTime
+  status           ProjectStatus
+  evidenceDocs     String[]
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  supervisorId     String?
+  expenditures     Expenditure[]
+  milestones       MilestoneSubmission[]
+  contractor       User?                 @relation("Contractor", fields: [contractorId], references: [id])
+  supervisingMda   MDA?                  @relation(fields: [supervisingMdaId], references: [id])
+  supervisor       User?                 @relation("Supervisor", fields: [supervisorId], references: [id])
+}
+
+model MilestoneSubmission {
+  id              String           @id @default(cuid())
+  projectId       String
+  contractorId    String
+  milestoneStage  MilestoneStage
+  percentComplete Float
+  notes           String?
+  geoTag          Json?
+  evidenceDocs    String[]
+  status          SubmissionStatus
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  contractor      User             @relation("ContractorSubmission", fields: [contractorId], references: [id])
+  project         Project          @relation(fields: [projectId], references: [id])
+  reviewer        User?            @relation("Reviewer", fields: [reviewedBy], references: [id])
+}
+
+model BudgetAllocation {
+  id             String   @id @default(cuid())
+  mdaId          String
+  fiscalYear     Int
+  quarter        Int
+  amount         Float
+  source         String
+  supportingDocs String[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  mda            MDA      @relation(fields: [mdaId], references: [id])
+}
+
+model Expenditure {
+  id             String   @id @default(cuid())
+  projectId      String
+  amount         Float
+  date           DateTime
+  recipient      String
+  supportingDocs String[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  project        Project  @relation(fields: [projectId], references: [id])
+}
+
+model Revenue {
+  id             String   @id @default(cuid())
+  mdaId          String
+  type           String
+  amount         Float
+  date           DateTime
+  supportingDocs String[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  mda            MDA      @relation(fields: [mdaId], references: [id])
+}
+
+model ProcurementRequest {
+  id            String            @id @default(cuid())
+  mdaId         String
+  title         String
+  description   String
+  estimatedCost Float
+  requestDate   DateTime
+  status        ProcurementStatus
+  documents     String[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  awards        Award[]
+  bids          Bid[]
+  mda           MDA               @relation(fields: [mdaId], references: [id])
+}
+
+model Bid {
+  id                   String             @id @default(cuid())
+  procurementRequestId String
+  vendorId             String
+  bidAmount            Float
+  proposalDocs         String[]
+  complianceDocs       String[]
+  status               BidStatus
+  submittedAt          DateTime
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  procurementRequest   ProcurementRequest @relation(fields: [procurementRequestId], references: [id])
+  vendor               User               @relation(fields: [vendorId], references: [id])
+}
+
+model Award {
+  id                   String             @id @default(cuid())
+  procurementRequestId String
+  vendorId             String
+  contractValue        Float
+  awardDate            DateTime
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  procurementRequest   ProcurementRequest @relation(fields: [procurementRequestId], references: [id])
+  vendor               User               @relation(fields: [vendorId], references: [id])
+}
+
+model Meeting {
+  id             String          @id @default(cuid())
+  title          String
+  agendaDocs     String[]
+  participants   String[]
+  scheduledAt    DateTime
+  locationOrLink String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  minutes        MeetingMinutes?
+}
+
+model MeetingMinutes {
+  id          String   @id @default(cuid())
+  meetingId   String   @unique
+  decisions   String[]
+  actionItems Json[]
+  attachments String[]
+  recordedAt  DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  meeting     Meeting  @relation(fields: [meetingId], references: [id])
+}
+
+model DiscrepancyRemark {
+  id         String            @id @default(cuid())
+  entityId   String
+  module     AuditModule
+  auditorId  String
+  comment    String
+  status     DiscrepancyStatus
+  resolvedAt DateTime?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  auditor    User              @relation(fields: [auditorId], references: [id])
+}
+
+model CalendarEvent {
+  id          String         @id @default(cuid())
+  title       String
+  date        DateTime
+  startTime   String?
+  endTime     String?
+  project     String?
+  status      EventStatus?
+  priority    EventPriority?
+  description String?
+  contractor  String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model Payment {
+  id                          String               @id @default(cuid())
+  sourceType                  PaymentSourceType
+  projectId                   String?
+  requestFormId               String?
+  payrollId                   String?
+  createdById                 String
+  submittedById               String?
+  approverIds                 String[]
+  payeeId                     String?
+  payerAccountId              String?
+  currency                    String
+  exchangeRate                Float?
+  isForeignCurrency           Boolean              @default(false)
+  amount                      Float
+  taxAmount                   Float                @default(0)
+  totalAmount                 Float
+  fxAppliedAmount             Float?
+  balanceOutstanding          Float                @default(0)
+  status                      PaymentStatus        @default(draft)
+  method                      PaymentMethod        @default(bank_transfer)
+  paymentDate                 String?
+  dueDate                     String?
+  scheduledFor                String?
+  notes                       String?
+  reference                   String?
+  tags                        String[]
+  requiresApproval            Boolean              @default(false)
+  isDraft                     Boolean              @default(true)
+  isLocked                    Boolean              @default(false)
+  isArchived                  Boolean              @default(false)
+  isRecurring                 Boolean              @default(false)
+  recurrenceTemplateId        String?
+  derivedFromRequestFormItems Boolean              @default(false)
+  requestFormItemIds          String[]
+  attachments                 String[]
+  auditLog                    Json?
+  reconciliationStatus        String?
+  reconciliationDate          DateTime?
+  ledgerEntryIds              String[]
+  cancellationReason          String?
+  createdAt                   DateTime             @default(now())
+  updatedAt                   DateTime             @updatedAt
+  createdBy                   User                 @relation("CreatedPayments", fields: [createdById], references: [id])
+  submittedBy                 User?                @relation("SubmittedPayments", fields: [submittedById], references: [id])
+  installments                PaymentInstallment[]
+  items                       PaymentItem[]
+}
+
+model PaymentItem {
+  id                String   @id @default(cuid())
+  paymentId         String
+  description       String
+  quantity          Float    @default(1)
+  unitPrice         Float
+  currency          String
+  taxRate           Float    @default(0)
+  taxAmount         Float    @default(0)
+  total             Float
+  requestFormItemId String?
+  metadata          Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  payment           Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+}
+
+model PaymentInstallment {
+  id        String        @id @default(cuid())
+  paymentId String
+  dueDate   String
+  amount    Float
+  status    PaymentStatus @default(pending_approval)
+  paidAt    DateTime?
+  reference String?
+  notes     String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  payment   Payment       @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id          String          @id @default(cuid())
+  actor       String
+  entity      String
+  entityId    String?
+  actionType  AuditActionType
+  status      AuditStatus
+  before      Json?
+  after       Json?
+  description String
+  timestamp   DateTime        @default(now())
+  ipAddress   String?
+  userAgent   String?
+
+  @@index([actor])
+  @@index([entity])
+  @@index([timestamp])
+  @@index([actionType])
+}
+
+model RolePermissionTemplate {
+  id          String   @id @default(cuid())
+  role        UserRole @unique
+  permissions Json
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([role])
+  @@map("role_permission_templates")
+}
 
 enum UserRole {
   SuperAdmin
@@ -99,275 +423,6 @@ enum EventPriority {
   low
 }
 
-// =====================================================
-// MODELS
-// =====================================================
-
-model User {
-  id                 String    @id @default(cuid())
-  email              String    @unique
-  firstname          String
-  lastname           String
-  role               UserRole
-  mdaId              String?
-  mda                MDA?      @relation(fields: [mdaId], references: [id])
-  password           String? // Added for auth
-  status             String    @default("active") // Replaces isActive, matches TypeScript type
-  lastLogin          DateTime?
-  mustChangePassword Boolean   @default(false)
-  passwordChangedAt  DateTime?
-  permissions        Json? // RBAS: JSON field storing permissions in action_module format
-
-  // Relations
-  contractorProjects Project[] @relation("Contractor")
-  supervisedProjects Project[] @relation("Supervisor")
-
-  submittedMilestones MilestoneSubmission[] @relation("ContractorSubmission")
-  reviewedMilestones  MilestoneSubmission[] @relation("Reviewer")
-
-  bids   Bid[]
-  awards Award[]
-
-  discrepancies DiscrepancyRemark[]
-
-  createdPayments   Payment[] @relation("CreatedPayments")
-  submittedPayments Payment[] @relation("SubmittedPayments")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model MDA {
-  id          String  @id @default(cuid())
-  name        String
-  category    String
-  description String?
-  headOfMda   String?
-  email       String?
-  phone       String?
-  address     String?
-  isActive    Boolean @default(true)
-
-  // Relations
-  users               User[]
-  supervisedProjects  Project[] // projects supervised by this MDA
-  budgetAllocations   BudgetAllocation[]
-  revenues            Revenue[]
-  procurementRequests ProcurementRequest[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Project {
-  id          String          @id @default(cuid())
-  title       String
-  description String
-  category    ProjectCategory
-
-  supervisingMdaId String?
-  supervisingMda   MDA?    @relation(fields: [supervisingMdaId], references: [id])
-
-  contractorId String?
-  contractor   User?   @relation("Contractor", fields: [contractorId], references: [id])
-
-  contractValue     Float
-  startDate         DateTime
-  endDate           DateTime
-  status            ProjectStatus
-  evidenceDocs      String[] // Array of URLs
-
-  supervisorId String?
-  supervisor   User?   @relation("Supervisor", fields: [supervisorId], references: [id])
-
-  // Relations
-  milestones   MilestoneSubmission[]
-  expenditures Expenditure[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model MilestoneSubmission {
-  id        String  @id @default(cuid())
-  projectId String
-  project   Project @relation(fields: [projectId], references: [id])
-
-  contractorId String
-  contractor   User   @relation("ContractorSubmission", fields: [contractorId], references: [id])
-
-  milestoneStage  MilestoneStage
-  percentComplete Float
-  notes           String?
-
-  // GeoLocation
-  geoTag Json?
-
-  evidenceDocs String[]
-  status       SubmissionStatus
-
-  reviewedBy String?
-  reviewer   User?     @relation("Reviewer", fields: [reviewedBy], references: [id])
-  reviewedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model BudgetAllocation {
-  id             String   @id @default(cuid())
-  mdaId          String
-  mda            MDA      @relation(fields: [mdaId], references: [id])
-  fiscalYear     Int
-  quarter        Int
-  amount         Float
-  source         String
-  supportingDocs String[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Expenditure {
-  id             String   @id @default(cuid())
-  projectId      String
-  project        Project  @relation(fields: [projectId], references: [id])
-  amount         Float
-  date           DateTime
-  recipient      String
-  supportingDocs String[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Revenue {
-  id             String   @id @default(cuid())
-  mdaId          String
-  mda            MDA      @relation(fields: [mdaId], references: [id])
-  type           String
-  amount         Float
-  date           DateTime
-  supportingDocs String[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model ProcurementRequest {
-  id            String            @id @default(cuid())
-  mdaId         String
-  mda           MDA               @relation(fields: [mdaId], references: [id])
-  title         String
-  description   String
-  estimatedCost Float
-  requestDate   DateTime
-  status        ProcurementStatus
-  documents     String[]
-
-  // Relations
-  bids   Bid[]
-  awards Award[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Bid {
-  id                   String             @id @default(cuid())
-  procurementRequestId String
-  procurementRequest   ProcurementRequest @relation(fields: [procurementRequestId], references: [id])
-
-  vendorId String
-  vendor   User   @relation(fields: [vendorId], references: [id])
-
-  bidAmount      Float
-  proposalDocs   String[]
-  complianceDocs String[]
-  status         BidStatus
-  submittedAt    DateTime
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Award {
-  id                   String             @id @default(cuid())
-  procurementRequestId String
-  procurementRequest   ProcurementRequest @relation(fields: [procurementRequestId], references: [id])
-
-  vendorId String
-  vendor   User   @relation(fields: [vendorId], references: [id])
-
-  contractValue Float
-  awardDate     DateTime
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Meeting {
-  id             String   @id @default(cuid())
-  title          String
-  agendaDocs     String[]
-  participants   String[] // Array of User IDs or emails if external
-  scheduledAt    DateTime
-  locationOrLink String
-
-  minutes MeetingMinutes?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model MeetingMinutes {
-  id          String   @id @default(cuid())
-  meetingId   String   @unique
-  meeting     Meeting  @relation(fields: [meetingId], references: [id])
-  decisions   String[]
-  // ActionItems would ideally be a separate model, but storing as Json for simplicity based on types
-  actionItems Json[]
-  attachments String[]
-  recordedAt  DateTime
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model DiscrepancyRemark {
-  id         String            @id @default(cuid())
-  entityId   String
-  module     AuditModule
-  auditorId  String
-  auditor    User              @relation(fields: [auditorId], references: [id])
-  comment    String
-  status     DiscrepancyStatus
-  resolvedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model CalendarEvent {
-  id          String         @id @default(cuid())
-  title       String
-  date        DateTime
-  startTime   String?
-  endTime     String?
-  project     String?
-  status      EventStatus?
-  priority    EventPriority?
-  description String?
-  contractor  String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// =====================================================
-// PAYMENTS
-// =====================================================
-
 enum PaymentSourceType {
   project
   requestForm
@@ -393,107 +448,6 @@ enum PaymentMethod {
   card
 }
 
-model Payment {
-  id            String            @id @default(cuid())
-  sourceType    PaymentSourceType
-  projectId     String?
-  requestFormId String?
-  payrollId     String?
-
-  createdById   String
-  createdBy     User     @relation("CreatedPayments", fields: [createdById], references: [id])
-  submittedById String?
-  submittedBy   User?    @relation("SubmittedPayments", fields: [submittedById], references: [id])
-  approverIds   String[] // Array of User IDs
-
-  payeeId        String?
-  payerAccountId String?
-
-  currency          String
-  exchangeRate      Float?
-  isForeignCurrency Boolean @default(false)
-
-  amount             Float
-  taxAmount          Float  @default(0)
-  totalAmount        Float
-  fxAppliedAmount    Float?
-  balanceOutstanding Float  @default(0)
-
-  status PaymentStatus @default(draft)
-  method PaymentMethod @default(bank_transfer)
-
-  paymentDate  String? // ISO Date string
-  dueDate      String? // ISO Date string
-  scheduledFor String? // ISO Date string
-
-  notes     String?
-  reference String?
-  tags      String[]
-
-  requiresApproval     Boolean @default(false)
-  isDraft              Boolean @default(true)
-  isLocked             Boolean @default(false)
-  isArchived           Boolean @default(false)
-  isRecurring          Boolean @default(false)
-  recurrenceTemplateId String?
-
-  derivedFromRequestFormItems Boolean  @default(false)
-  requestFormItemIds          String[]
-
-  attachments          String[]
-  auditLog             Json?
-  reconciliationStatus String?
-  reconciliationDate   DateTime?
-  ledgerEntryIds       String[]
-  cancellationReason   String?
-
-  items        PaymentItem[]
-  installments PaymentInstallment[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model PaymentItem {
-  id        String  @id @default(cuid())
-  paymentId String
-  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-
-  description String
-  quantity    Float  @default(1)
-  unitPrice   Float
-  currency    String
-  taxRate     Float  @default(0)
-  taxAmount   Float  @default(0)
-  total       Float
-
-  requestFormItemId String?
-  metadata          Json?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model PaymentInstallment {
-  id        String  @id @default(cuid())
-  paymentId String
-  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-
-  dueDate   String // ISO Date string
-  amount    Float
-  status    PaymentStatus @default(pending_approval)
-  paidAt    DateTime?
-  reference String?
-  notes     String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// =====================================================
-// AUDIT LOGGING
-// =====================================================
-
 enum AuditActionType {
   CREATE
   UPDATE
@@ -509,40 +463,3 @@ enum AuditStatus {
   FAILED
   PENDING
 }
-
-model AuditLog {
-  id          String          @id @default(cuid())
-  actor       String // User ID or name who performed the action
-  entity      String // Entity type (e.g., "Project", "User", "Budget")
-  entityId    String? // ID of the affected entity
-  actionType  AuditActionType
-  status      AuditStatus
-  before      Json? // Complete data before change
-  after       Json? // Complete data after change
-  description String // Human-readable description
-  timestamp   DateTime        @default(now())
-  ipAddress   String? // Optional: Track IP address
-  userAgent   String? // Optional: Track user agent
-
-  @@index([actor])
-  @@index([entity])
-  @@index([timestamp])
-  @@index([actionType])
-}
-
-model RolePermissionTemplate {
-  id          String   @id @default(cuid())
-  role        UserRole @unique
-  permissions Json
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([role])
-  @@map("role_permission_templates")
-}
-
-
-// =====================================================
-// PERMISSIONS
-// =====================================================
