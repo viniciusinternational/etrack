@@ -132,7 +132,9 @@ export function AppSidebar() {
             <SidebarMenu className="space-y-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const active = pathname === item.href || pathname.startsWith(item.href + "/");
+                const active =
+                  pathname === item.href ||
+                  pathname.startsWith(item.href + "/");
                 const badgeCount = getBadgeCount(item.href);
 
                 const menuButton = (
@@ -158,7 +160,7 @@ export function AppSidebar() {
                           "relative flex h-8 w-8 items-center justify-center rounded-md transition-all duration-200 flex-shrink-0",
                           active
                             ? "bg-sidebar-primary-foreground/20 text-sidebar-primary-foreground"
-                            : "bg-sidebar-accent/30 text-sidebar-foreground/70 group-hover:bg-sidebar-primary/20 group-hover:text-sidebar-primary"
+                            : "bg-sidebar-accent/30 text-sidebar-foreground/70 group-hover/menu-item:bg-sidebar-primary/20 group-hover/menu-item:text-sidebar-primary"
                         )}
                       >
                         <Icon className="h-4 w-4" aria-hidden="true" />
@@ -216,7 +218,10 @@ export function AppSidebar() {
           <div className="px-3 py-2 rounded-lg bg-sidebar-accent/20 border border-sidebar-border/50 mb-2">
             <div className="flex items-center gap-3">
               <Avatar className="h-8 w-8 border-2 border-sidebar-primary/30">
-                <AvatarImage src="" alt={`${user.firstname} ${user.lastname}`} />
+                <AvatarImage
+                  src=""
+                  alt={`${user.firstname} ${user.lastname}`}
+                />
                 <AvatarFallback className="bg-gradient-to-br from-sidebar-primary via-sidebar-primary/90 to-sidebar-primary/70 text-sidebar-primary-foreground font-semibold text-xs">
                   {getInitials(user.firstname, user.lastname)}
                 </AvatarFallback>
@@ -252,7 +257,7 @@ export function AppSidebar() {
                     className="flex items-center gap-3 px-3 w-full"
                     aria-label="Settings"
                   >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sidebar-accent/30 text-sidebar-foreground/70 transition-all duration-200 group-hover:bg-sidebar-primary/20 group-hover:text-sidebar-primary flex-shrink-0">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sidebar-accent/30 text-sidebar-foreground/70 transition-all duration-200 group-hover/menu-item:bg-sidebar-primary/20 group-hover/menu-item:text-sidebar-primary flex-shrink-0">
                       <Settings className="h-4 w-4" aria-hidden="true" />
                     </div>
                     {!isCollapsed && (
@@ -288,7 +293,7 @@ export function AppSidebar() {
                   aria-label="Sign out"
                 >
                   <div className="flex items-center gap-3 px-3 w-full">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-destructive/10 text-destructive/70 transition-all duration-200 group-hover:bg-destructive/20 group-hover:text-destructive flex-shrink-0">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-destructive/10 text-destructive/70 transition-all duration-200 group-hover/menu-item:bg-destructive/20 group-hover/menu-item:text-destructive flex-shrink-0">
                       <LogOut className="h-4 w-4" aria-hidden="true" />
                     </div>
                     {!isCollapsed && (
