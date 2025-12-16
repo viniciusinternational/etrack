@@ -1,12 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AuditLog, AuditActionType } from "@/types";
 import { GlobalTable } from "@/components/global/global-table";
 import { ColumnDef } from "@tanstack/react-table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -14,14 +26,30 @@ import { Button } from "@/components/ui/button";
 
 interface AuditListViewProps {
   logs: AuditLog[];
-  onFilterChange: (filters: { entity?: string; actor?: string; actionType?: string }) => void;
+  onFilterChange: (filters: {
+    entity?: string;
+    actor?: string;
+    actionType?: string;
+  }) => void;
+  initialActorFilter?: string;
 }
 
-export function AuditListView({ logs, onFilterChange }: AuditListViewProps) {
+export function AuditListView({
+  logs,
+  onFilterChange,
+  initialActorFilter,
+}: AuditListViewProps) {
   const router = useRouter();
   const [entityFilter, setEntityFilter] = useState("");
-  const [actorFilter, setActorFilter] = useState("");
+  const [actorFilter, setActorFilter] = useState(initialActorFilter || "");
   const [actionTypeFilter, setActionTypeFilter] = useState("");
+
+  // Update actorFilter when initialActorFilter changes
+  useEffect(() => {
+    if (initialActorFilter) {
+      setActorFilter(initialActorFilter);
+    }
+  }, [initialActorFilter]);
 
   const handleFilterChange = () => {
     onFilterChange({
@@ -32,7 +60,10 @@ export function AuditListView({ logs, onFilterChange }: AuditListViewProps) {
   };
 
   const getActionBadge = (actionType: AuditActionType) => {
-    const variants: Record<AuditActionType, "default" | "secondary" | "destructive" | "outline"> = {
+    const variants: Record<
+      AuditActionType,
+      "default" | "secondary" | "destructive" | "outline"
+    > = {
       [AuditActionType.CREATE]: "default",
       [AuditActionType.UPDATE]: "secondary",
       [AuditActionType.DELETE]: "destructive",
@@ -62,7 +93,9 @@ export function AuditListView({ logs, onFilterChange }: AuditListViewProps) {
         return (
           <div className="text-sm">
             <div>{date.toLocaleDateString()}</div>
-            <div className="text-muted-foreground">{date.toLocaleTimeString()}</div>
+            <div className="text-muted-foreground">
+              {date.toLocaleTimeString()}
+            </div>
           </div>
         );
       },
@@ -70,7 +103,9 @@ export function AuditListView({ logs, onFilterChange }: AuditListViewProps) {
     {
       accessorKey: "actor",
       header: "Actor",
-      cell: ({ row }) => <div className="font-medium">{row.original.actor}</div>,
+      cell: ({ row }) => (
+        <div className="font-medium">{row.original.actor}</div>
+      ),
     },
     {
       accessorKey: "entity",
@@ -79,7 +114,9 @@ export function AuditListView({ logs, onFilterChange }: AuditListViewProps) {
         <div>
           <div className="font-medium">{row.original.entity}</div>
           {row.original.entityId && (
-            <div className="text-xs text-muted-foreground">ID: {row.original.entityId.substring(0, 8)}...</div>
+            <div className="text-xs text-muted-foreground">
+              ID: {row.original.entityId.substring(0, 8)}...
+            </div>
           )}
         </div>
       ),
@@ -98,7 +135,9 @@ export function AuditListView({ logs, onFilterChange }: AuditListViewProps) {
       accessorKey: "description",
       header: "Description",
       cell: ({ row }) => (
-        <div className="max-w-md truncate text-sm">{row.original.description}</div>
+        <div className="max-w-md truncate text-sm">
+          {row.original.description}
+        </div>
       ),
     },
   ];
@@ -115,7 +154,9 @@ export function AuditListView({ logs, onFilterChange }: AuditListViewProps) {
       <Card>
         <CardHeader>
           <CardTitle>Filters</CardTitle>
-          <CardDescription>Filter audit logs by entity, actor, or action type</CardDescription>
+          <CardDescription>
+            Filter audit logs by entity, actor, or action type
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -132,14 +173,17 @@ export function AuditListView({ logs, onFilterChange }: AuditListViewProps) {
               <Label htmlFor="actor">Actor</Label>
               <Input
                 id="actor"
-                placeholder="User ID or name"
+                placeholder="User ID or email"
                 value={actorFilter}
                 onChange={(e) => setActorFilter(e.target.value)}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="actionType">Action Type</Label>
-              <Select value={actionTypeFilter || undefined} onValueChange={(value) => setActionTypeFilter(value)}>
+              <Select
+                value={actionTypeFilter || undefined}
+                onValueChange={(value) => setActionTypeFilter(value)}
+              >
                 <SelectTrigger id="actionType">
                   <SelectValue placeholder="All actions" />
                 </SelectTrigger>
@@ -163,11 +207,13 @@ export function AuditListView({ logs, onFilterChange }: AuditListViewProps) {
         </CardContent>
       </Card>
 
-      <GlobalTable 
-        columns={columns} 
+      <GlobalTable
+        columns={columns}
         data={logs}
         title="Audit Trail"
-        description={`Showing ${logs.length} recent audit log${logs.length !== 1 ? "s" : ""}`}
+        description={`Showing ${logs.length} audit log${
+          logs.length !== 1 ? "s" : ""
+        }`}
         searchPlaceholder="Search audit logs..."
         searchKey="description"
         onRowClick={(row) => router.push(`/audit/${row.id}`)}

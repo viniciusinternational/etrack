@@ -1,12 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/api-permissions";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const authResult = await requireAuth(req, ["view_audit"]);
+    if (authResult instanceof NextResponse) return authResult;
+
+    const { id } = params;
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: "Missing audit log ID" },
+        { status: 400 }
+      );
+    }
+
     const log = await prisma.auditLog.findUnique({
       where: { id },
     });
