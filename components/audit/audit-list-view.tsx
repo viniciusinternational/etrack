@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AuditLog, AuditActionType } from "@/types";
 import { GlobalTable } from "@/components/global/global-table";
@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { it } from "node:test";
 
 interface AuditListViewProps {
   logs: AuditLog[];
@@ -40,23 +41,49 @@ export function AuditListView({
   initialActorFilter,
 }: AuditListViewProps) {
   const router = useRouter();
-  const [entityFilter, setEntityFilter] = useState("");
-  const [actorFilter, setActorFilter] = useState(initialActorFilter || "");
-  const [actionTypeFilter, setActionTypeFilter] = useState("");
+  const hasInitialized = useRef(false);
+  const onFilterChangeRef = useRef(onFilterChange);
 
-  // Update actorFilter when initialActorFilter changes
+  // Keep ref updated
   useEffect(() => {
-    if (initialActorFilter) {
-      setActorFilter(initialActorFilter);
-    }
-  }, [initialActorFilter]);
+    onFilterChangeRef.current = onFilterChange;
+  }, [onFilterChange]);
 
-  const handleFilterChange = () => {
-    onFilterChange({
+  const [entityFilter, setEntityFilter] = useState(() => "");
+  const [actorFilter, setActorFilter] = useState(() => "");
+  const [actionTypeFilter, setActionTypeFilter] = useState(() => "");
+
+  // Only set initial values once on mount
+
+  const handleApplyFilters = () => {
+    console.log("Applying filters:", {
+      entityFilter,
+      actorFilter,
+      actionTypeFilter,
+    });
+    onFilterChangeRef.current({
       entity: entityFilter || undefined,
       actor: actorFilter || undefined,
       actionType: actionTypeFilter || undefined,
     });
+  };
+
+  const handleClearFilters = () => {
+    console.log("Clearing filters");
+    setEntityFilter("");
+    setActorFilter("");
+    setActionTypeFilter("");
+    onFilterChangeRef.current({});
+  };
+
+  const handleActionTypeChange = (value: string) => {
+    setActionTypeFilter(value === "ALL" ? "" : value);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleApplyFilters();
+    }
   };
 
   const getActionBadge = (actionType: AuditActionType) => {
@@ -142,6 +169,8 @@ export function AuditListView({
     },
   ];
 
+  const hasActiveFilters = entityFilter || actorFilter || actionTypeFilter;
+
   return (
     <div className="p-6 space-y-6">
       <div>
@@ -167,6 +196,7 @@ export function AuditListView({
                 placeholder="e.g., Project, User"
                 value={entityFilter}
                 onChange={(e) => setEntityFilter(e.target.value)}
+                onKeyPress={handleKeyPress}
               />
             </div>
             <div className="space-y-2">
@@ -176,18 +206,20 @@ export function AuditListView({
                 placeholder="User ID or email"
                 value={actorFilter}
                 onChange={(e) => setActorFilter(e.target.value)}
+                onKeyPress={handleKeyPress}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="actionType">Action Type</Label>
               <Select
-                value={actionTypeFilter || undefined}
-                onValueChange={(value) => setActionTypeFilter(value)}
+                value={actionTypeFilter || "ALL"}
+                onValueChange={handleActionTypeChange}
               >
                 <SelectTrigger id="actionType">
                   <SelectValue placeholder="All actions" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="ALL">All actions</SelectItem>
                   <SelectItem value="CREATE">Create</SelectItem>
                   <SelectItem value="UPDATE">Update</SelectItem>
                   <SelectItem value="DELETE">Delete</SelectItem>
@@ -198,9 +230,17 @@ export function AuditListView({
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-end">
-              <Button onClick={handleFilterChange} className="w-full">
+            <div className="flex items-end gap-2">
+              <Button onClick={handleApplyFilters} className="flex-1">
                 Apply Filters
+              </Button>
+              <Button
+                onClick={handleClearFilters}
+                variant="outline"
+                className="flex-1"
+                disabled={!hasActiveFilters}
+              >
+                Clear
               </Button>
             </div>
           </div>
@@ -214,6 +254,7 @@ export function AuditListView({
         description={`Showing ${logs.length} audit log${
           logs.length !== 1 ? "s" : ""
         }`}
+        initialSearchTerm={initialActorFilter || ""}
         searchPlaceholder="Search audit logs..."
         searchKey="description"
         onRowClick={(row) => router.push(`/audit/${row.id}`)}

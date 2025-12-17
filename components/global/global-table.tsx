@@ -32,6 +32,7 @@ interface GlobalTableProps<TData> {
   data: TData[];
   columns: ColumnDef<TData>[];
   title: string;
+  initialSearchTerm?: string;
   description?: string;
   searchPlaceholder?: string;
   searchKey?: string;
@@ -52,10 +53,11 @@ export function GlobalTable<TData extends { id: string }>({
   searchPlaceholder = "Search...",
   searchKey = "name",
   onRowClick,
+  initialSearchTerm,
   rowClickHref,
   stats,
 }: GlobalTableProps<TData>) {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(() => initialSearchTerm || "");
 
   // Do not append action/edit columns. Rows are clickable via `onRowClick` or
   // `rowClickHref` (click a row to view details). Keep original columns

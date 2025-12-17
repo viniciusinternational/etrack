@@ -6,7 +6,7 @@ import { AuditActionType, AuditStatus } from "@prisma/client";
 export async function GET(req: NextRequest) {
   try {
     // Check authentication and permission
-    const authResult = await requireAuth(req, ['view_audit']);
+    const authResult = await requireAuth(req, ["view_audit"]);
     if (authResult instanceof NextResponse) {
       return authResult;
     }
@@ -14,16 +14,32 @@ export async function GET(req: NextRequest) {
     const entity = searchParams.get("entity");
     const actor = searchParams.get("actor");
     const actionType = searchParams.get("actionType");
-    
-    const where: Record<string, string> = {};
-    if (entity) where.entity = entity;
-    if (actor) where.actor = actor;
-    if (actionType) where.actionType = actionType;
+
+    // Build where clause with proper filtering
+    const where: any = {};
+
+    if (entity) {
+      where.entity = {
+        contains: entity,
+        mode: "insensitive", // case-insensitive search
+      };
+    }
+
+    if (actor) {
+      where.actor = {
+        contains: actor,
+        mode: "insensitive", // case-insensitive search
+      };
+    }
+
+    if (actionType) {
+      where.actionType = actionType; // exact match for enum
+    }
 
     const logs = await prisma.auditLog.findMany({
       where,
       orderBy: { timestamp: "desc" },
-      take: 100, // Limit to recent 100 logs
+      take: 100,
     });
 
     return NextResponse.json({ success: true, data: logs });
@@ -39,7 +55,16 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { actor, entity, entityId, actionType, status, before, after, description } = body;
+    const {
+      actor,
+      entity,
+      entityId,
+      actionType,
+      status,
+      before,
+      after,
+      description,
+    } = body;
 
     // Convert actionType to enum if it's a string
     let actionTypeEnum: AuditActionType;
@@ -53,7 +78,8 @@ export async function POST(req: NextRequest) {
         LOGIN: AuditActionType.LOGIN,
         LOGOUT: AuditActionType.LOGOUT,
       };
-      actionTypeEnum = actionMap[actionType.toUpperCase()] || AuditActionType.VIEW;
+      actionTypeEnum =
+        actionMap[actionType.toUpperCase()] || AuditActionType.VIEW;
     } else {
       actionTypeEnum = actionType;
     }
@@ -84,7 +110,8 @@ export async function POST(req: NextRequest) {
         before: before || null,
         after: after || null,
         description,
-        ipAddress: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
+        ipAddress:
+          req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
         userAgent: req.headers.get("user-agent"),
       },
     });

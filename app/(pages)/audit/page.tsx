@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuditLogs } from "@/hooks/use-audit";
 import { Loader2 } from "lucide-react";
@@ -11,26 +11,32 @@ export default function AuditPage() {
   const searchParams = useSearchParams();
   const actorFromQuery = searchParams.get("actor");
 
-  // Check authentication and permission
+  console.log("AuditPage render - actorFromQuery:", actorFromQuery);
+
   const { isChecking } = useAuthGuard(["view_audit"]);
 
-  // Initialize filters with actor from query if present
+  const initialActor = useMemo(() => actorFromQuery, []);
+
   const [filters, setFilters] = useState<{
     entity?: string;
     actor?: string;
     actionType?: string;
-  }>({
-    actor: actorFromQuery || undefined,
-  });
+  }>({});
 
-  // Update filters when query params change
-  useEffect(() => {
-    if (actorFromQuery) {
-      setFilters((prev) => ({ ...prev, actor: actorFromQuery }));
-    }
-  }, [actorFromQuery]);
+  console.log("Current filters state:", filters);
+
+  // Memoize the callback so it doesn't change on every render
+  const handleFilterChange = useCallback(
+    (newFilters: { entity?: string; actor?: string; actionType?: string }) => {
+      console.log("handleFilterChange called with:", newFilters);
+      setFilters(newFilters);
+    },
+    []
+  );
 
   const { data: logs, isLoading } = useAuditLogs(filters);
+
+  console.log("Logs data:", logs);
 
   if (isChecking || isLoading) {
     return (
@@ -43,8 +49,8 @@ export default function AuditPage() {
   return (
     <AuditListView
       logs={logs || []}
-      onFilterChange={setFilters}
-      initialActorFilter={actorFromQuery || undefined}
+      onFilterChange={handleFilterChange}
+      initialActorFilter={initialActor || undefined}
     />
   );
 }
