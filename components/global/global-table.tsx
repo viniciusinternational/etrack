@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
+import { useRouter } from "next/navigation";
 import {
   useReactTable,
   getCoreRowModel,
@@ -57,11 +58,9 @@ export function GlobalTable<TData extends { id: string }>({
   rowClickHref,
   stats,
 }: GlobalTableProps<TData>) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState(() => initialSearchTerm || "");
 
-  // Do not append action/edit columns. Rows are clickable via `onRowClick` or
-  // `rowClickHref` (click a row to view details). Keep original columns
-  // unchanged to avoid adding an actions column.
   const tableColumns = useMemo(() => [...columns], [columns]);
 
   const table = useReactTable({
@@ -81,6 +80,7 @@ export function GlobalTable<TData extends { id: string }>({
 
   return (
     <>
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground">{title}</h1>
@@ -164,6 +164,7 @@ export function GlobalTable<TData extends { id: string }>({
                     </TableRow>
                   ))}
                 </TableHeader>
+
                 <TableBody>
                   {table.getRowModel().rows.length === 0 ? (
                     <TableRow>
@@ -179,13 +180,14 @@ export function GlobalTable<TData extends { id: string }>({
                       <TableRow
                         key={row.id}
                         onClick={() => {
-                          onRowClick?.(row.original);
-                          if (rowClickHref) {
-                            window.location.href = rowClickHref(row.original);
+                          if (onRowClick) {
+                            onRowClick(row.original);
+                          } else if (rowClickHref) {
+                            router.push(rowClickHref(row.original));
                           }
                         }}
                         className={
-                          rowClickHref || onRowClick
+                          onRowClick || rowClickHref
                             ? "cursor-pointer hover:bg-muted"
                             : ""
                         }
