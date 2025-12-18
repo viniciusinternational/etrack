@@ -4,13 +4,13 @@ import { requireAuth } from "@/lib/api-permissions";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // ✅ FIX
 ) {
   try {
     const authResult = await requireAuth(req, ["view_audit"]);
     if (authResult instanceof NextResponse) return authResult;
 
-    const { id } = params;
+    const { id } = await params; // ✅ FIX
 
     if (!id) {
       return NextResponse.json(
