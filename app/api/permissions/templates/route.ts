@@ -36,17 +36,28 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validatedData = updateTemplateSchema.parse(body);
 
+    // Normalize permissions to object if for some reason they come as an array
+    // (Zod should have caught it, but we want to be safe for existing data or logic errors)
+    let permissions = validatedData.permissions;
+    if (Array.isArray(permissions)) {
+      const normalized: any = {};
+      permissions.forEach((p: any) => {
+        if (typeof p === 'string') normalized[p] = true;
+      });
+      permissions = normalized;
+    }
+
     const template = await prisma.rolePermissionTemplate.upsert({
       where: {
         role: validatedData.role,
       },
       update: {
-        permissions: validatedData.permissions as any,
+        permissions: permissions as any,
         description: validatedData.description,
       },
       create: {
         role: validatedData.role,
-        permissions: validatedData.permissions as any,
+        permissions: permissions as any,
         description: validatedData.description,
       },
     });

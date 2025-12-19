@@ -9,6 +9,7 @@ import {
   getModuleFromPermissionKey,
   PermissionKey,
   UserPermissions,
+  PartialUserPermissions,
 } from "@/types/permissions";
 import { UserRole } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,7 @@ export default function PermissionsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<string>(UserRole.Admin);
   const [templates, setTemplates] = useState<Record<string, RolePermissionTemplate>>({});
-  const [modifiedTemplates, setModifiedTemplates] = useState<Record<string, UserPermissions>>({});
+  const [modifiedTemplates, setModifiedTemplates] = useState<Record<string, PartialUserPermissions>>({});
 
   // Group permissions by module
   const permissionsByModule = ALL_PERMISSION_KEYS.reduce((acc, key) => {
@@ -57,12 +58,29 @@ export default function PermissionsPage() {
       
       if (data.ok) {
         const templatesMap: Record<string, RolePermissionTemplate> = {};
-        const modifiedMap: Record<string, UserPermissions> = {};
+        const modifiedMap: Record<string, PartialUserPermissions> = {};
         
-        data.data.forEach((t: RolePermissionTemplate) => {
-          templatesMap[t.role] = t;
-          modifiedMap[t.role] = { ...t.permissions };
-        });
+        // Process existing templates
+        if (Array.isArray(data.data)) {
+          data.data.forEach((t: any) => {
+            let normalizedPermissions: PartialUserPermissions = {};
+            
+            if (Array.isArray(t.permissions)) {
+              // Convert array ["perm1", "perm2"] to object { perm1: true, perm2: true }
+              t.permissions.forEach((key: string) => {
+                if (key && typeof key === 'string') normalizedPermissions[key as PermissionKey] = true;
+              });
+            } else if (typeof t.permissions === 'object' && t.permissions !== null) {
+              // It's already an object, but let's ensure it's clean (only booleans)
+              Object.entries(t.permissions).forEach(([key, value]) => {
+                normalizedPermissions[key as PermissionKey] = !!value;
+              });
+            }
+              
+            templatesMap[t.role] = { ...t, permissions: normalizedPermissions };
+            modifiedMap[t.role] = { ...normalizedPermissions };
+          });
+        }
 
         // Initialize missing roles with empty permissions
         Object.values(UserRole).forEach((role) => {
@@ -72,10 +90,13 @@ export default function PermissionsPage() {
               role,
               permissions: {} as UserPermissions,
             };
+          }
+          if (!modifiedMap[role]) {
             modifiedMap[role] = {};
           }
         });
 
+        console.log("Normalized templates from DB:", templatesMap);
         setTemplates(templatesMap);
         setModifiedTemplates(modifiedMap);
       } else {
@@ -117,7 +138,22 @@ export default function PermissionsPage() {
     try {
       setIsSaving(true);
       const role = activeTab;
-      const permissions = modifiedTemplates[role];
+      let permissions = modifiedTemplates[role] || {};
+
+      // EXTREME SAFETY: Ensure we are sending an object, not an array
+      // Zod Error reported: "Invalid input: expected boolean, received string" at path ["permissions", "0"]
+      // This happens if 'permissions' is an array like ["view_user", ...].
+      if (Array.isArray(permissions)) {
+        console.warn("Permissions state for role", role, "was an array. Normalizing to object.");
+        const normalized: any = {};
+        (permissions as any).forEach((p: any) => {
+          if (typeof p === 'string') normalized[p] = true;
+          else if (typeof p === 'object' && p.key) normalized[p.key] = !!p.value;
+        });
+        permissions = normalized;
+      }
+
+      console.log("Saving permissions for role:", role, permissions);
 
       const res = await fetch("/api/permissions/templates", {
         method: "POST",
@@ -134,10 +170,10 @@ export default function PermissionsPage() {
         // Update local state to reflect saved
         setTemplates((prev) => ({
           ...prev,
-          [role]: {
-            ...prev[role],
+          [role as string]: {
+            ...prev[role as string],
             permissions: { ...permissions },
-          },
+          } as any,
         }));
       } else {
         toast.error(data.message || "Failed to save changes");
@@ -148,6 +184,17 @@ export default function PermissionsPage() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const formatPermissionName = (key: string) => {
+    // Remove module suffix if present (optional, but requested "human readable")
+    // The key is like "create_user". We want "Create User" or just "Create" since it's in "User Module" section?
+    // User asked "display the permissions name in human readable manner".
+    // "create_user" -> "Create User" is good.
+    return key
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
   if (isLoading) {
@@ -183,10 +230,14 @@ export default function PermissionsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="overflow-x-auto pb-2">
-            <TabsList className="w-max justify-start mb-4">
+        <div className="overflow-x-auto pb-4">
+            <TabsList className="w-max justify-start mb-4 h-auto p-1 gap-2 bg-transparent">
             {Object.values(UserRole).map((role) => (
-                <TabsTrigger key={role} value={role} className="min-w-[100px]">
+                <TabsTrigger 
+                  key={role} 
+                  value={role} 
+                  className="min-w-[100px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground border border-transparent data-[state=active]:border-border hover:bg-muted"
+                >
                 {role}
                 </TabsTrigger>
             ))}
@@ -233,7 +284,7 @@ export default function PermissionsPage() {
                             >
                             <Checkbox
                                 id={`${role}-${key}`}
-                                checked={modifiedTemplates[role]?.[key] || false}
+                                checked={!!modifiedTemplates[role]?.[key]}
                                 onCheckedChange={(checked) =>
                                 handlePermissionToggle(role, key, !!checked)
                                 }
@@ -243,7 +294,7 @@ export default function PermissionsPage() {
                                 htmlFor={`${role}-${key}`}
                                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                                 >
-                                {key}
+                                {formatPermissionName(key)}
                                 </Label>
                             </div>
                             </div>

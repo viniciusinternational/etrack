@@ -121,8 +121,16 @@ async function main() {
   ];
 
   for (const t of roleTemplates) {
+    const permissionsObj: Record<string, boolean> = {};
+    t.permissions.forEach((key: string) => {
+      permissionsObj[key] = true;
+    });
+
     await prisma.rolePermissionTemplate.create({
-      data: { role: t.role, permissions: t.permissions }
+      data: { 
+        role: t.role as any, 
+        permissions: permissionsObj as any 
+      }
     });
   }
 
