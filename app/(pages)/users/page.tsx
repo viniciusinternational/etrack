@@ -1,6 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
-import { Plus, Search, Loader2 } from "lucide-react";
+import { Plus, Search, Loader2, Shield } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { GlobalTable } from "@/components/global/global-table";
@@ -147,10 +147,16 @@ export default function UserManagementPage() {
             Manage user accounts, roles, and permissions
           </p>
         </div>
+      <div className="flex gap-3">
+        <Button variant="outline" onClick={() => router.push("/users/permissions")} size="lg">
+          <Shield className="mr-2 h-4 w-4" />
+          Manage Permissions
+        </Button>
         <Button onClick={() => router.push("/users/new")} size="lg">
           <Plus className="mr-2 h-4 w-4" />
           Add New User
         </Button>
+      </div>
       </div>
 
       {/* Statistics Cards */}
