@@ -17,7 +17,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CalendarEvent } from "@/types";
+import { CalendarEvent, EventType } from "@/types";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ExternalLink } from "lucide-react";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
 const localizer = momentLocalizer(moment);
@@ -73,12 +76,15 @@ export function GlobalCalendar({
     [onEventClick]
   );
 
-  // Custom event style based on status
-  const eventStyleGetter = useCallback((event: { status?: string }) => {
+  // Custom event style based on status and event type
+  const eventStyleGetter = useCallback((event: { status?: string; eventType?: EventType }) => {
     const status = event.status?.toLowerCase() || "";
     let backgroundColor = "hsl(var(--primary))";
 
-    if (status.includes("approved")) {
+    // Different color for meeting events
+    if (event.eventType === EventType.MEETING) {
+      backgroundColor = "#3b82f6"; // blue for meetings
+    } else if (status.includes("approved")) {
       backgroundColor = "#10b981"; // green
     } else if (status.includes("rejected")) {
       backgroundColor = "#ef4444"; // red
@@ -240,12 +246,52 @@ export function GlobalCalendar({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{selectedEvent?.title}</DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle>{selectedEvent?.title}</DialogTitle>
+              <div className="flex gap-2">
+                {selectedEvent?.eventType && (
+                  <Badge
+                    variant={
+                      selectedEvent.eventType === EventType.MEETING
+                        ? "default"
+                        : "outline"
+                    }
+                  >
+                    {selectedEvent.eventType === EventType.MEETING
+                      ? "Meeting"
+                      : "General"}
+                  </Badge>
+                )}
+                {selectedEvent?.status && (
+                  <Badge variant="outline" className="capitalize">
+                    {selectedEvent.status.replace("-", " ")}
+                  </Badge>
+                )}
+                {selectedEvent?.priority && (
+                  <Badge
+                    variant={
+                      selectedEvent.priority === "high"
+                        ? "destructive"
+                        : selectedEvent.priority === "medium"
+                        ? "default"
+                        : "outline"
+                    }
+                    className="capitalize"
+                  >
+                    {selectedEvent.priority}
+                  </Badge>
+                )}
+              </div>
+            </div>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               {selectedEvent?.date &&
                 moment(ensureDate(selectedEvent.date)).format("MMMM D, YYYY")}
+              {selectedEvent?.startTime &&
+                ` at ${selectedEvent.startTime}`}
+              {selectedEvent?.endTime &&
+                ` - ${selectedEvent.endTime}`}
             </p>
             {selectedEvent?.project && (
               <div>
@@ -263,12 +309,33 @@ export function GlobalCalendar({
                 </p>
               </div>
             )}
-            <div className="flex gap-2 flex-wrap">
-              {selectedEvent?.status && <Badge>{selectedEvent.status}</Badge>}
-              {selectedEvent?.priority && (
-                <Badge variant="outline">{selectedEvent.priority}</Badge>
+            {selectedEvent?.eventType === EventType.MEETING &&
+              selectedEvent?.joinUrl && (
+                <div>
+                  <Button
+                    className="w-full"
+                    onClick={() => {
+                      window.open(
+                        selectedEvent.joinUrl,
+                        "_blank",
+                        "noopener,noreferrer"
+                      );
+                    }}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Join Meeting
+                  </Button>
+                </div>
               )}
-            </div>
+            {selectedEvent?.eventType === EventType.MEETING &&
+              selectedEvent?.meetingId && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Meeting ID
+                  </p>
+                  <p className="text-sm font-mono">{selectedEvent.meetingId}</p>
+                </div>
+              )}
           </div>
         </DialogContent>
       </Dialog>

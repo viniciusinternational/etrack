@@ -222,6 +222,9 @@ model CalendarEvent {
   priority    EventPriority?
   description String?
   contractor  String?
+  eventType   EventType      @default(GENERAL)
+  joinUrl     String?
+  meetingId   String?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 }
@@ -421,6 +424,11 @@ enum EventPriority {
   high
   medium
   low
+}
+
+enum EventType {
+  GENERAL
+  MEETING
 }
 
 enum PaymentSourceType {

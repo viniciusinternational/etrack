@@ -390,6 +390,16 @@ export interface Revenue {
 export type EventStatus = "on-track" | "delayed" | "completed" | "planned";
 export type EventPriority = "high" | "medium" | "low";
 
+export enum EventType {
+  GENERAL = "GENERAL",
+  MEETING = "MEETING",
+}
+
+export interface MeetingParticipant {
+  email: string;
+  name: string;
+}
+
 export interface CalendarEvent {
   id: string;
   title: string;
@@ -401,6 +411,10 @@ export interface CalendarEvent {
   priority?: EventPriority;
   description?: string;
   contractor?: string;
+  eventType?: EventType;
+  joinUrl?: string;
+  meetingId?: string;
+  participants?: MeetingParticipant[];
   createdAt?: Date;
   updatedAt?: Date;
 }

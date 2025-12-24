@@ -3,11 +3,17 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { createAuditLog, getUserInfoFromHeaders } from "@/lib/audit-logger";
-import { EventStatus, EventPriority } from "@prisma/client";
+import { EventStatus, EventPriority, EventType } from "@prisma/client";
 import { requireAuth } from "@/lib/api-permissions";
+import { createMeeting } from "@/lib/meeting-api";
+
+const participantSchema = z.object({
+  email: z.string().email("Invalid email format"),
+  name: z.string().min(1, "Name is required").max(120, "Name must be 120 characters or less"),
+});
 
 const createEventSchema = z.object({
-  title: z.string().min(1, "Title is required"),
+  title: z.string().min(1, "Title is required").max(120, "Title must be 120 characters or less"),
   date: z.string().datetime(),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
@@ -16,6 +22,8 @@ const createEventSchema = z.object({
   priority: z.nativeEnum(EventPriority).optional(),
   description: z.string().optional(),
   contractor: z.string().optional(),
+  eventType: z.nativeEnum(EventType).optional().default(EventType.GENERAL),
+  participants: z.array(participantSchema).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -66,10 +74,40 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = createEventSchema.parse(body);
 
+    let meetingId: string | undefined;
+    let joinUrl: string | undefined;
+
+    // If event type is MEETING, create meeting via external API
+    if (validatedData.eventType === EventType.MEETING) {
+      try {
+        const meetingResult = await createMeeting(
+          validatedData.title,
+          validatedData.participants
+        );
+        meetingId = meetingResult.id;
+        joinUrl = meetingResult.joinUrl;
+      } catch (meetingError) {
+        // Log error but still create the event
+        console.error("Failed to create meeting via external API:", meetingError);
+        // Optionally, you could return an error here instead of continuing
+        // For now, we'll create the event without meeting data
+      }
+    }
+
     const newEvent = await prisma.calendarEvent.create({
       data: {
-        ...validatedData,
+        title: validatedData.title,
         date: new Date(validatedData.date),
+        startTime: validatedData.startTime,
+        endTime: validatedData.endTime,
+        project: validatedData.project,
+        status: validatedData.status,
+        priority: validatedData.priority,
+        description: validatedData.description,
+        contractor: validatedData.contractor,
+        eventType: validatedData.eventType,
+        meetingId,
+        joinUrl,
       },
     });
 

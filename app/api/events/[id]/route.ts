@@ -2,10 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { createAuditLog, getUserInfoFromHeaders } from "@/lib/audit-logger";
-import { EventStatus, EventPriority } from "@prisma/client";
+import { EventStatus, EventPriority, EventType } from "@prisma/client";
+import { updateMeeting, createMeeting } from "@/lib/meeting-api";
+
+const participantSchema = z.object({
+  email: z.string().email("Invalid email format"),
+  name: z.string().min(1, "Name is required").max(120, "Name must be 120 characters or less"),
+});
 
 const updateEventSchema = z.object({
-  title: z.string().min(1).optional(),
+  title: z.string().min(1).max(120).optional(),
   date: z.string().datetime().optional(),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
@@ -14,6 +20,10 @@ const updateEventSchema = z.object({
   priority: z.nativeEnum(EventPriority).optional(),
   description: z.string().optional(),
   contractor: z.string().optional(),
+  eventType: z.nativeEnum(EventType).optional(),
+  participants: z.array(participantSchema).optional(),
+  joinUrl: z.string().url().optional(),
+  meetingId: z.string().optional(),
 });
 
 export async function GET(
@@ -62,11 +72,62 @@ export async function PUT(
       );
     }
 
+    // Handle meeting updates
+    let meetingId = existingEvent.meetingId;
+    let joinUrl = existingEvent.joinUrl;
+
+    // If changing to meeting type and no meeting exists, create one
+    if (validatedData.eventType === EventType.MEETING && !existingEvent.meetingId) {
+      try {
+        const meetingResult = await createMeeting(
+          validatedData.title || existingEvent.title,
+          validatedData.participants
+        );
+        meetingId = meetingResult.id;
+        joinUrl = meetingResult.joinUrl;
+      } catch (meetingError) {
+        console.error("Failed to create meeting via external API:", meetingError);
+        // Continue without meeting data
+      }
+    }
+    // If updating an existing meeting
+    else if (existingEvent.meetingId && validatedData.eventType === EventType.MEETING) {
+      try {
+        const updates: { title?: string; status?: "ACTIVE" | "ENDED" } = {};
+        if (validatedData.title) {
+          updates.title = validatedData.title;
+        }
+        // Map event status to meeting status if needed
+        if (validatedData.status === "completed") {
+          updates.status = "ENDED";
+        }
+
+        if (Object.keys(updates).length > 0) {
+          await updateMeeting(existingEvent.meetingId, updates);
+        }
+      } catch (meetingError) {
+        console.error("Failed to update meeting via external API:", meetingError);
+        // Continue with event update
+      }
+    }
+    // If changing from meeting to general, we keep the meetingId and joinUrl
+    // but don't sync with external API (meeting remains but event is no longer a meeting)
+
     const updatedEvent = await prisma.calendarEvent.update({
       where: { id },
       data: {
-        ...validatedData,
+        title: validatedData.title,
         date: validatedData.date ? new Date(validatedData.date) : undefined,
+        startTime: validatedData.startTime,
+        endTime: validatedData.endTime,
+        project: validatedData.project,
+        status: validatedData.status,
+        priority: validatedData.priority,
+        description: validatedData.description,
+        contractor: validatedData.contractor,
+        eventType: validatedData.eventType,
+        meetingId: meetingId !== undefined ? meetingId : validatedData.meetingId,
+        joinUrl: joinUrl !== undefined ? joinUrl : validatedData.joinUrl,
       },
     });
 
@@ -122,6 +183,17 @@ export async function DELETE(
         { ok: false, message: "Not found" },
         { status: 404 }
       );
+    }
+
+    // If event has a meetingId, delete the external meeting
+    if (existingEvent.meetingId) {
+      try {
+        const { deleteMeeting } = await import("@/lib/meeting-api");
+        await deleteMeeting(existingEvent.meetingId);
+      } catch (meetingError) {
+        console.error("Failed to delete meeting via external API:", meetingError);
+        // Continue with event deletion even if meeting deletion fails
+      }
     }
 
     await prisma.calendarEvent.delete({ where: { id } });
