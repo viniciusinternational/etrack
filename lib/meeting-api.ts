@@ -98,6 +98,96 @@ async function meetingApiRequest<T>(
 }
 
 /**
+ * Make a request that returns full response (data + meta) for list endpoints
+ */
+async function meetingApiRequestWithMeta<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<ApiResponse<T>> {
+  const baseUrl = getMeetingApiBaseUrl();
+  const apiKey = getMeetingApiKey();
+  const url = `${baseUrl}${endpoint}`;
+
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      "X-API-Key": apiKey,
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({}))) as ApiError;
+    const errorMessage =
+      errorData.error || `API request failed with status ${response.status}`;
+    const errorCode = errorData.code || "API_ERROR";
+
+    throw new Error(`${errorCode}: ${errorMessage}`);
+  }
+
+  return (await response.json()) as ApiResponse<T>;
+}
+
+export interface ListMeetingsParams {
+  status?: "ACTIVE" | "ENDED";
+  limit?: number;
+  offset?: number;
+}
+
+export interface ListMeetingsResult {
+  data: MeetingResponse[];
+  meta: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+    timestamp?: string;
+  };
+}
+
+export type { MeetingResponse };
+
+/**
+ * List meetings from the external API with optional filtering and pagination
+ */
+export async function listMeetings(
+  params: ListMeetingsParams = {}
+): Promise<ListMeetingsResult> {
+  try {
+    const searchParams = new URLSearchParams();
+    if (params.status) searchParams.set("status", params.status);
+    if (params.limit != null) searchParams.set("limit", String(params.limit));
+    if (params.offset != null) searchParams.set("offset", String(params.offset));
+    const query = searchParams.toString();
+    const endpoint = `/api/v1/meetings${query ? `?${query}` : ""}`;
+
+    const response = await meetingApiRequestWithMeta<MeetingResponse[]>(endpoint);
+    const data = response.data ?? [];
+    const meta = response.meta ?? {
+      total: data.length,
+      limit: 50,
+      offset: 0,
+      hasMore: false,
+    };
+
+    return {
+      data,
+      meta: {
+        total: meta.total ?? data.length,
+        limit: meta.limit ?? 50,
+        offset: meta.offset ?? 0,
+        hasMore: meta.hasMore ?? false,
+        timestamp: meta.timestamp,
+      },
+    };
+  } catch (error) {
+    console.error("Error listing meetings via external API:", error);
+    throw error;
+  }
+}
+
+/**
  * Create a new meeting via the external API
  */
 export async function createMeeting(
@@ -110,18 +200,13 @@ export async function createMeeting(
       participants: participants && participants.length > 0 ? participants : undefined,
     };
 
-    const meeting = await meetingApiRequest<MeetingResponse>(
+    return await meetingApiRequest<MeetingResponse>(
       "/api/v1/meetings",
       {
         method: "POST",
         body: JSON.stringify(requestBody),
       }
     );
-
-    return {
-      id: meeting.id,
-      joinUrl: meeting.joinUrl,
-    };
   } catch (error) {
     console.error("Error creating meeting via external API:", error);
     throw error;
@@ -134,9 +219,9 @@ export async function createMeeting(
 export async function updateMeeting(
   meetingId: string,
   updates: { title?: string; status?: "ACTIVE" | "ENDED" }
-): Promise<void> {
+): Promise<MeetingResponse> {
   try {
-    await meetingApiRequest<MeetingResponse>(
+    return await meetingApiRequest<MeetingResponse>(
       `/api/v1/meetings/${meetingId}`,
       {
         method: "PATCH",

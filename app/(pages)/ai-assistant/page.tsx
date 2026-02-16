@@ -22,8 +22,8 @@ export default function AIAssistantPage() {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <header className="space-y-2 mb-6 pb-4 border-b">
+    <div className="h-full flex flex-col min-h-0">
+      <header className="flex-shrink-0 space-y-2 mb-6 pb-4 border-b">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           AI Assistant
         </h1>
@@ -32,7 +32,7 @@ export default function AIAssistantPage() {
         </p>
       </header>
 
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 flex flex-col">
         <AIAssistantThread />
       </div>
     </div>

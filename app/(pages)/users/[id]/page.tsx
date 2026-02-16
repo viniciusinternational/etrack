@@ -1,4 +1,3 @@
-"use client";
 import UserViewClient from "@/components/admin/user-view";
 
 export default async function UserDetailPage({

@@ -16,7 +16,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { CalendarEvent, EventType } from "@/types";
+import { EventType } from "@/types";
+import type { CalendarEvent } from "@/types";
 
 function formatDate(date: Date | string): string {
   const d = date instanceof Date ? date : new Date(date);

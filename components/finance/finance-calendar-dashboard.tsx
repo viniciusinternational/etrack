@@ -404,7 +404,7 @@ export function FinanceCalendarDashboard() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="amount">Amount (USD)</Label>
+                      <Label htmlFor="amount">Amount (NGN)</Label>
                       <Input
                         id="amount"
                         type="number"
@@ -743,7 +743,7 @@ export function FinanceCalendarDashboard() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="edit-amount">Amount (USD)</Label>
+                <Label htmlFor="edit-amount">Amount (NGN)</Label>
                 <Input
                   id="edit-amount"
                   type="number"

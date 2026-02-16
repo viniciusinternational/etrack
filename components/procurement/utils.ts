@@ -4,7 +4,7 @@ import { PROCUREMENT_STATUSES, BID_STATUSES } from "./constants"
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency: "NGN",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount)

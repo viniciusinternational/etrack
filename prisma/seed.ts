@@ -11,7 +11,8 @@ import {
   PaymentMethod, 
   PaymentSourceType,
   EventStatus,
-  EventPriority
+  EventPriority,
+  EventType
 } from "@prisma/client";
 import { hashPassword } from "../lib/password";
 import { ALL_PERMISSION_KEYS, type UserPermissions } from "../types/permissions";
@@ -27,21 +28,21 @@ function buildAllPermissionsJSON(): UserPermissions {
   return permissionsObj as UserPermissions;
 }
 
-// Fixed UUIDs for consistent relationship mapping
+// Fixed UUIDs for consistent relationship mapping - Kaduna State
 const MDAS = {
-  WORKS: { id: "mda-works-001", name: "Ministry of Works and Infrastructure" },
-  HEALTH: { id: "mda-health-001", name: "Ministry of Health" },
-  EDUCATION: { id: "mda-education-001", name: "Ministry of Education" },
+  WORKS: { id: "mda-works-001", name: "Kaduna State Ministry of Works and Infrastructure" },
+  HEALTH: { id: "mda-health-001", name: "Kaduna State Ministry of Health" },
+  EDUCATION: { id: "mda-education-001", name: "Kaduna State Ministry of Education" },
 };
 
 const USERS = {
-  ADMIN: { id: "user-admin-001", email: "admin@etrack.gov", role: UserRole.SuperAdmin },
-  PM: { id: "user-pm-001", email: "pm@etrack.gov", role: UserRole.ProjectManager },
-  CONTRACTOR: { id: "user-cont-001", email: "contractor@company.com", role: UserRole.Contractor },
-  FINANCE: { id: "user-fin-001", email: "finance@etrack.gov", role: UserRole.FinanceOfficer },
-  PROCUREMENT: { id: "user-proc-001", email: "procurement@etrack.gov", role: UserRole.ProcurementOfficer },
-  AUDITOR: { id: "user-audit-001", email: "auditor@etrack.gov", role: UserRole.Auditor },
-  VENDOR: { id: "user-vendor-001", email: "vendor@company.com", role: UserRole.Vendor },
+  ADMIN: { id: "user-admin-001", email: "admin@kadunastate.gov.ng", role: UserRole.SuperAdmin },
+  PM: { id: "user-pm-001", email: "pm@kadunastate.gov.ng", role: UserRole.ProjectManager },
+  CONTRACTOR: { id: "user-cont-001", email: "contractor@bamikconstruction.ng", role: UserRole.Contractor },
+  FINANCE: { id: "user-fin-001", email: "finance@kadunastate.gov.ng", role: UserRole.FinanceOfficer },
+  PROCUREMENT: { id: "user-proc-001", email: "procurement@kadunastate.gov.ng", role: UserRole.ProcurementOfficer },
+  AUDITOR: { id: "user-audit-001", email: "auditor@kadunastate.gov.ng", role: UserRole.Auditor },
+  VENDOR: { id: "user-vendor-001", email: "vendor@kadunamedicalsupplies.ng", role: UserRole.Vendor },
 };
 
 async function main() {
@@ -79,31 +80,32 @@ async function main() {
         id: MDAS.WORKS.id,
         name: MDAS.WORKS.name,
         category: "Infrastructure",
-        description: "Public works and roads",
-        headOfMda: "Eng. Musa Abdullahi",
-        email: "works@gov.ng",
+        description: "Public works, roads and infrastructure across Kaduna State LGAs",
+        headOfMda: "Eng. Sani Mohammed",
+        email: "works@kadunastate.gov.ng",
+        address: "Sir Kashim Ibrahim House, Kaduna",
         isActive: true,
       },
       {
         id: MDAS.HEALTH.id,
         name: MDAS.HEALTH.name,
         category: "Healthcare",
-        description: "Health services",
-        headOfMda: "Dr. Fatima Ibrahim",
-        email: "health@gov.ng",
+        description: "Health services and PHC revitalization in Igabi, Zaria, Chikun and Kaduna North/South",
+        headOfMda: "Dr. Aisha Bello",
+        email: "health@kadunastate.gov.ng",
         isActive: true,
       },
       {
         id: MDAS.EDUCATION.id,
         name: MDAS.EDUCATION.name,
         category: "Education",
-        description: "Education management",
-        headOfMda: "Prof. Ahmed Bello",
-        email: "education@gov.ng",
+        description: "Education management across Kaduna State",
+        headOfMda: "Prof. Ibrahim Musa",
+        email: "education@kadunastate.gov.ng",
         isActive: true,
       },
-      { name: "Ministry of Finance", category: "Finance", email: "finance@gov.ng" },
-      { name: "Ministry of Agriculture", category: "Agriculture", email: "agric@gov.ng" },
+      { name: "Kaduna State Ministry of Finance", category: "Finance", email: "finance@kadunastate.gov.ng" },
+      { name: "Kaduna State Ministry of Agriculture", category: "Agriculture", email: "agric@kadunastate.gov.ng" },
     ]
   });
 
@@ -138,13 +140,13 @@ async function main() {
   console.log("👥 Seeding Users...");
   const password = hashPassword("password123");
   const users = [
-    { ...USERS.ADMIN, firstname: "System", lastname: "Admin", permissions: buildAllPermissionsJSON() },
-    { ...USERS.PM, firstname: "Project", lastname: "Manager", mdaId: MDAS.WORKS.id },
-    { ...USERS.CONTRACTOR, firstname: "John", lastname: "Builder", mdaId: MDAS.WORKS.id },
-    { ...USERS.FINANCE, firstname: "Jane", lastname: "Finance", mdaId: MDAS.EDUCATION.id },
-    { ...USERS.PROCUREMENT, firstname: "Peter", lastname: "Procure", mdaId: MDAS.HEALTH.id },
-    { ...USERS.AUDITOR, firstname: "Alex", lastname: "Audit" },
-    { ...USERS.VENDOR, firstname: "Victor", lastname: "Vendor" },
+    { ...USERS.ADMIN, firstname: "Musa", lastname: "Sani", permissions: buildAllPermissionsJSON() },
+    { ...USERS.PM, firstname: "Ahmed", lastname: "Ibrahim", mdaId: MDAS.WORKS.id },
+    { ...USERS.CONTRACTOR, firstname: "Ibrahim", lastname: "Yusuf", mdaId: MDAS.WORKS.id },
+    { ...USERS.FINANCE, firstname: "Aisha", lastname: "Mohammed", mdaId: MDAS.EDUCATION.id },
+    { ...USERS.PROCUREMENT, firstname: "Sani", lastname: "Bello", mdaId: MDAS.HEALTH.id },
+    { ...USERS.AUDITOR, firstname: "Hauwa", lastname: "Abubakar" },
+    { ...USERS.VENDOR, firstname: "Victor", lastname: "Okonkwo" },
   ];
 
   // Create a map for quick lookup
@@ -187,8 +189,8 @@ async function main() {
   console.log("🏗️ Seeding Projects...");
   const project1 = await prisma.project.create({
     data: {
-      title: "Rehabilitation of Lagos-Ibadan Expressway",
-      description: "Major road rehabilitation project phase 2",
+      title: "Rehabilitation of Kaduna-Zaria Expressway (Phase 2)",
+      description: "Dualization and rehabilitation of 76km Kaduna-Zaria road, sections around Rigasa and Zaria city",
       category: ProjectCategory.Infrastructure,
       supervisingMdaId: MDAS.WORKS.id,
       supervisorId: USERS.PM.id,
@@ -202,11 +204,11 @@ async function main() {
 
   const project2 = await prisma.project.create({
     data: {
-      title: "Construction of Primary Health Center",
-      description: "New health center construction in rural district",
+      title: "Construction of Primary Health Centre, Barnawa, Kaduna South LGA",
+      description: "New 20-bed PHC under Kaduna State PHC Revitalization Programme",
       category: ProjectCategory.Healthcare,
       supervisingMdaId: MDAS.HEALTH.id,
-      supervisorId: USERS.PM.id, // Assuming PM can supervise cross-MDA for seed simplicity or verify schema flexibility
+      supervisorId: USERS.PM.id,
       contractValue: 45000000,
       startDate: new Date("2025-03-01"),
       endDate: new Date("2025-12-31"),
@@ -225,7 +227,7 @@ async function main() {
       status: SubmissionStatus.Approved,
       reviewedBy: USERS.PM.id,
       reviewedAt: new Date(),
-      notes: "Foundation completed successfully according to specifications",
+      notes: "Foundation completed for Kaduna-Zaria road section",
     }
   });
 
@@ -236,7 +238,7 @@ async function main() {
       milestoneStage: MilestoneStage.Superstructure,
       percentComplete: 45,
       status: SubmissionStatus.Pending,
-      notes: "Ongoing superstructure work",
+      notes: "Asphalt laying ongoing - Rigasa to Zaria section",
     }
   });
 
@@ -250,7 +252,7 @@ async function main() {
       fiscalYear: 2025,
       quarter: 1,
       amount: 500000000,
-      source: "Federal Allocation",
+      source: "Kaduna State FAAC Allocation",
     }
   });
 
@@ -260,7 +262,7 @@ async function main() {
       projectId: project1.id,
       amount: 25000000, // Mobilization fee
       date: new Date("2025-01-20"),
-      recipient: "ABC Construction Ltd",
+      recipient: "Bamik Construction Ltd",
     }
   });
 
@@ -268,7 +270,7 @@ async function main() {
   await prisma.revenue.create({
     data: {
       mdaId: MDAS.EDUCATION.id,
-      type: "Grant",
+      type: "UBEC Matching Grant",
       amount: 10000000,
       date: new Date("2025-02-10"),
     }
@@ -281,8 +283,8 @@ async function main() {
   const procRequest = await prisma.procurementRequest.create({
     data: {
       mdaId: MDAS.HEALTH.id,
-      title: "Supply of Medical Equipment",
-      description: "Procurement of X-ray machines and MRI scanners",
+      title: "Supply of Medical Equipment for Zaria General Hospital",
+      description: "Procurement of X-ray machines and laboratory equipment for Zaria General Hospital upgrade",
       estimatedCost: 75000000,
       requestDate: new Date("2025-04-01"),
       status: ProcurementStatus.Awarded,
@@ -323,11 +325,11 @@ async function main() {
       currency: "NGN",
       status: PaymentStatus.paid,
       method: PaymentMethod.bank_transfer,
-      reference: "PAY-2025-001",
+      reference: "KDN-PAY-2025-001",
       paymentDate: new Date().toISOString(),
       items: {
         create: {
-          description: "Milestone 1 Payment - Foundation",
+          description: "Milestone 1 - Kaduna-Zaria Road Foundation",
           quantity: 1,
           unitPrice: 15000000,
           total: 15000000,
@@ -350,7 +352,7 @@ async function main() {
       requiresApproval: true,
       items: {
         create: {
-          description: "Materials Purchase Reimbursement",
+          description: "Materials Purchase Reimbursement - Kaduna-Zaria Road",
           quantity: 1,
           unitPrice: 5000000,
           total: 5000000,
@@ -364,20 +366,21 @@ async function main() {
   console.log("📅 Seeding Events & Meetings...");
   await prisma.meeting.create({
     data: {
-      title: "Project Stakeholder Meeting",
+      title: "Kaduna-Zaria Road Project Stakeholder Review",
       scheduledAt: new Date("2025-06-15T10:00:00Z"),
-      locationOrLink: "Conference Room A",
+      locationOrLink: "Sir Kashim Ibrahim House, Conference Room 3",
       participants: [USERS.PM.id, USERS.CONTRACTOR.id],
     }
   });
 
   await prisma.calendarEvent.create({
     data: {
-      title: "Site Inspection - Lagos Ibadan",
+      title: "Site Inspection - Kaduna-Zaria Expressway (Rigasa Section)",
       date: new Date("2025-07-01"),
       status: EventStatus.planned,
       priority: EventPriority.high,
-      project: "Lagos-Ibadan Rehab",
+      project: "Kaduna-Zaria Rehab",
+      eventType: EventType.GENERAL,
     }
   });
 
@@ -385,11 +388,11 @@ async function main() {
   console.log(`\n🔑 Login Credentials (Password: password123):`);
   console.log(`   Admin:       ${USERS.ADMIN.email}`);
   console.log(`   PM:          ${USERS.PM.email}`);
-  console.log(`   Contractor:  ${USERS.CONTRACTOR.email}`);
+  console.log(`   Contractor:  ${USERS.CONTRACTOR.email} (Bamik Construction)`);
   console.log(`   Finance:     ${USERS.FINANCE.email}`);
   console.log(`   Procurement: ${USERS.PROCUREMENT.email}`);
   console.log(`   Auditor:     ${USERS.AUDITOR.email}`);
-  console.log(`   Vendor:      ${USERS.VENDOR.email}`);
+  console.log(`   Vendor:      ${USERS.VENDOR.email} (Kaduna Medical Supplies)`);
 }
 
 main()

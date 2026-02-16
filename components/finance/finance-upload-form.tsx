@@ -240,7 +240,7 @@ export function FinanceUploadForm() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="amount">Amount (USD)</Label>
+                    <Label htmlFor="amount">Amount (NGN)</Label>
                     <Input
                       id="amount"
                       type="number"
@@ -409,7 +409,7 @@ export function FinanceUploadForm() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="rev-amount">Amount (USD)</Label>
+                    <Label htmlFor="rev-amount">Amount (NGN)</Label>
                     <Input
                       id="rev-amount"
                       type="number"
@@ -578,7 +578,7 @@ export function FinanceUploadForm() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="budget-amount">Amount (USD)</Label>
+                    <Label htmlFor="budget-amount">Amount (NGN)</Label>
                     <Input
                       id="budget-amount"
                       type="number"

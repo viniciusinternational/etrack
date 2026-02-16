@@ -400,6 +400,37 @@ export interface MeetingParticipant {
   name: string;
 }
 
+// External API Meeting (from meetings API - roomName, status, joinUrl, etc.)
+export interface ExternalMeeting {
+  id: string;
+  title: string;
+  status: "ACTIVE" | "ENDED";
+  roomName: string;
+  createdAt: string;
+  updatedAt: string;
+  joinUrl: string;
+  messageCount: number;
+  participants: MeetingParticipant[];
+}
+
+export interface MeetingListMeta {
+  total: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+  timestamp?: string;
+}
+
+export interface CreateMeetingInput {
+  title: string;
+  participants?: MeetingParticipant[];
+}
+
+export interface UpdateMeetingInput {
+  title?: string;
+  status?: "ACTIVE" | "ENDED";
+}
+
 export interface CalendarEvent {
   id: string;
   title: string;
@@ -493,6 +524,41 @@ export interface AdminStats {
   usersByRole: Record<UserRole, number>;
   recentUsers: User[];
   recentMDAs: MDA[];
+}
+
+// Reports API response shapes
+export type ReportType = "overview" | "financial" | "projects" | "users";
+
+export interface ReportOverviewData {
+  totalUsers: number;
+  activeUsers: number;
+  totalMDAs: number;
+  activeMDAs: number;
+  totalProjects: number;
+  totalBudget: number;
+  totalRevenue: number;
+  totalExpenditure: number;
+  usersByRole: Record<string, number>;
+  projectsByStatus: Record<string, number>;
+  mdaCounts: { name: string; count: number }[];
+}
+
+export interface ReportFinancialData {
+  budgetByMda: { name: string; budget: number; expenditure: number }[];
+  revenueTrend: { period: string; revenue: number; expenditure: number }[];
+  expenditureByRecipient: { name: string; value: number }[];
+}
+
+export interface ReportProjectsData {
+  byStatus: { name: string; count: number }[];
+  byCategory: { name: string; count: number }[];
+  byMda: { name: string; count: number }[];
+}
+
+export interface ReportUsersData {
+  totalUsers: number;
+  activeUsers: number;
+  byRole: { name: string; value: number }[];
 }
 
 // =====================================================
