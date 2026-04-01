@@ -26,6 +26,7 @@ const createProjectSchema = z.object({
   startDate: z.string(),
   endDate: z.string(),
   evidenceDocs: z.array(z.string()).optional().default([]),
+  projectGallery: z.array(z.string()).optional().default([]),
 });
 
 export async function GET(request: NextRequest) {
@@ -181,6 +182,7 @@ export async function POST(request: NextRequest) {
         endDate,
         status: ProjectStatus.Planned,
         evidenceDocs: validatedData.evidenceDocs || [],
+        projectGallery: validatedData.projectGallery || [],
       },
     });
 

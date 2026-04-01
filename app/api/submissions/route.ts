@@ -14,6 +14,7 @@ const createSubmissionSchema = z.object({
   notes: z.string().optional(),
   geoTag: z.any().optional(), // Accepting any JSON for now, or specific object
   evidenceDocs: z.array(z.string()).optional(),
+  mediaAttachments: z.array(z.string()).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -78,6 +79,8 @@ export async function POST(request: NextRequest) {
     const newSubmission = await prisma.milestoneSubmission.create({
       data: {
         ...validatedData,
+        evidenceDocs: validatedData.evidenceDocs ?? [],
+        mediaAttachments: validatedData.mediaAttachments ?? [],
         status: SubmissionStatus.Pending, // Default status
       },
     });

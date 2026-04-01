@@ -65,6 +65,7 @@ model Project {
   endDate          DateTime
   status           ProjectStatus
   evidenceDocs     String[]
+  projectGallery   String[]              @default([])
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
   supervisorId     String?
@@ -83,7 +84,8 @@ model MilestoneSubmission {
   percentComplete Float
   notes           String?
   geoTag          Json?
-  evidenceDocs    String[]
+  evidenceDocs     String[]
+  mediaAttachments String[]          @default([])
   status          SubmissionStatus
   reviewedBy      String?
   reviewedAt      DateTime?

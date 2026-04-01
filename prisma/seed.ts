@@ -199,6 +199,10 @@ async function main() {
       startDate: new Date("2025-01-15"),
       endDate: new Date("2026-06-30"),
       status: ProjectStatus.InProgress,
+      projectGallery: [
+        "https://example.com/media/kaduna-zaria-site-1.jpg",
+        "https://example.com/media/kaduna-zaria-drone-progress.mp4",
+      ],
     }
   });
 
@@ -213,6 +217,7 @@ async function main() {
       startDate: new Date("2025-03-01"),
       endDate: new Date("2025-12-31"),
       status: ProjectStatus.Planned,
+      projectGallery: ["https://example.com/media/phc-barnawa-site-plan.jpg"],
     }
   });
 
@@ -228,6 +233,10 @@ async function main() {
       reviewedBy: USERS.PM.id,
       reviewedAt: new Date(),
       notes: "Foundation completed for Kaduna-Zaria road section",
+      mediaAttachments: [
+        "https://example.com/media/foundation-complete-1.jpg",
+        "https://example.com/media/foundation-inspection.mp4",
+      ],
     }
   });
 
@@ -239,6 +248,7 @@ async function main() {
       percentComplete: 45,
       status: SubmissionStatus.Pending,
       notes: "Asphalt laying ongoing - Rigasa to Zaria section",
+      mediaAttachments: ["https://example.com/media/asphalt-progress-rigasa.jpg"],
     }
   });
 

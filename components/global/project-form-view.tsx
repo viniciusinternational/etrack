@@ -1,7 +1,7 @@
 "use client";
 import type React from "react";
 import { useState } from "react";
-import { ArrowLeft, Upload, FileText, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Loader2, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -20,10 +20,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { type Project, ProjectCategory, type MDA, type User, ProjectFormInput, type MilestoneSubmission, UserRole } from "@/types";
-import { MilestoneSubmissionForm } from "@/components/projects/milestone-submission-form";
+import { type Project, ProjectCategory, type MDA, type User, ProjectFormInput } from "@/types";
 import { useProjectPermissions } from "@/hooks/use-project-permissions";
+import { useUpload } from "@/hooks/use-upload";
+import { toast } from "sonner";
 
 export function ProjectFormView({
   project,
@@ -43,6 +43,7 @@ export function ProjectFormView({
   isSaving?: boolean;
 }) {
   const permissions = useProjectPermissions();
+  const { mutateAsync: uploadFile, isPending: isUploading } = useUpload();
   
   // Helper to format dates for input[type="date"]
   const formatDateForInput = (date: Date | string | undefined): string => {
@@ -64,11 +65,41 @@ export function ProjectFormView({
     startDate: formatDateForInput(project?.startDate),
     endDate: formatDateForInput(project?.endDate),
     evidenceDocs: project?.evidenceDocs || [],
+    projectGallery: project?.projectGallery || [],
   });
 
-  const [milestoneSubmissions, setMilestoneSubmissions] = useState<MilestoneSubmission[]>(
-    project?.milestones || []
-  );
+  const handleUploadFiles = async (
+    files: FileList | null,
+    target: "evidenceDocs" | "projectGallery"
+  ) => {
+    if (!files || files.length === 0) return;
+    try {
+      const results = await Promise.all(
+        Array.from(files).map((file) => uploadFile(file))
+      );
+      const urls = results
+        .filter((res): res is { url: string; filename: string } => !!res)
+        .map((res) => res.url);
+      setFormData((prev) => ({
+        ...prev,
+        [target]: [...prev[target], ...urls],
+      }));
+      toast.success("Files uploaded successfully");
+    } catch (error) {
+      console.error("Upload failed", error);
+      toast.error("Failed to upload files");
+    }
+  };
+
+  const removeUploadedFile = (
+    target: "evidenceDocs" | "projectGallery",
+    index: number
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [target]: prev[target].filter((_, i) => i !== index),
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,7 +182,7 @@ export function ProjectFormView({
                       })
                     }
                   >
-                    <SelectTrigger>
+                  <SelectTrigger className="w-[240px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -291,13 +322,7 @@ export function ProjectFormView({
                     type="file"
                     multiple
                     className="hidden"
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files || []);
-                      setFormData({
-                        ...formData,
-                        evidenceDocs: files.map((f) => f.name),
-                      });
-                    }}
+                    onChange={(e) => handleUploadFiles(e.target.files, "evidenceDocs")}
                   />
                   <Button
                     type="button"
@@ -307,6 +332,7 @@ export function ProjectFormView({
                     onClick={() =>
                       document.getElementById("evidenceDocs")?.click()
                     }
+                    disabled={isUploading}
                   >
                     Select Files
                   </Button>
@@ -323,6 +349,71 @@ export function ProjectFormView({
                           <FileText className="h-4 w-4" />
                           {doc}
                         </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeUploadedFile("evidenceDocs", idx)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="projectGallery">Project Gallery (Images/Videos)</Label>
+                <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                  <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                  <p className="mt-2 text-sm text-gray-600">
+                    Upload project photos and videos
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    JPG, PNG, WEBP, MP4, MOV
+                  </p>
+                  <input
+                    id="projectGallery"
+                    type="file"
+                    multiple
+                    accept="image/*,video/*"
+                    className="hidden"
+                    onChange={(e) => handleUploadFiles(e.target.files, "projectGallery")}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-4 bg-transparent"
+                    onClick={() =>
+                      document.getElementById("projectGallery")?.click()
+                    }
+                    disabled={isUploading}
+                  >
+                    Select Media
+                  </Button>
+                </div>
+
+                {formData.projectGallery.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {formData.projectGallery.map((media, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between text-sm bg-gray-50 p-2 rounded"
+                      >
+                        <span className="flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          {media}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeUploadedFile("projectGallery", idx)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -345,7 +436,12 @@ export function ProjectFormView({
           <Button 
             type="submit" 
             className="w-full sm:w-auto" 
-            disabled={isSaving || (!permissions.canCreate && !project) || (!permissions.canUpdate && project)}
+            disabled={
+              isSaving ||
+              isUploading ||
+              (!permissions.canCreate && !project) ||
+              (!permissions.canUpdate && !!project)
+            }
           >
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {project ? "Update Project" : "Create Project"}

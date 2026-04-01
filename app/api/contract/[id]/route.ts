@@ -15,6 +15,7 @@ const updateContractSchema = z.object({
   endDate: z.string().datetime().optional(),
   status: z.nativeEnum(ProjectStatus).optional(),
   evidenceDocs: z.array(z.string()).optional(),
+  projectGallery: z.array(z.string()).optional(),
 });
 
 export async function GET(

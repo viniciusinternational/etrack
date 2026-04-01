@@ -53,6 +53,9 @@ export function MilestoneSubmissionFormView({
   const [evidenceDocs, setEvidenceDocs] = useState<string[]>(
     submission?.evidenceDocs || []
   );
+  const [mediaAttachments, setMediaAttachments] = useState<string[]>(
+    submission?.mediaAttachments || []
+  );
   
   const [formData, setFormData] = useState({
     milestoneStage: submission?.milestoneStage || "",
@@ -63,7 +66,10 @@ export function MilestoneSubmissionFormView({
     status: submission?.status || SubmissionStatus.Pending,
   });
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    target: "evidence" | "media"
+  ) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
@@ -71,7 +77,11 @@ export function MilestoneSubmissionFormView({
       const uploadPromises = Array.from(files).map((file) => uploadFile(file));
       const results = await Promise.all(uploadPromises);
       const urls = results.filter((res) => res !== undefined).map((res) => res.url);
-      setEvidenceDocs((prev) => [...prev, ...urls]);
+      if (target === "evidence") {
+        setEvidenceDocs((prev) => [...prev, ...urls]);
+      } else {
+        setMediaAttachments((prev) => [...prev, ...urls]);
+      }
       toast.success("Files uploaded successfully");
     } catch (error) {
       console.error("Upload failed", error);
@@ -79,8 +89,12 @@ export function MilestoneSubmissionFormView({
     }
   };
 
-  const removeFile = (index: number) => {
-    setEvidenceDocs((prev) => prev.filter((_, i) => i !== index));
+  const removeFile = (index: number, target: "evidence" | "media") => {
+    if (target === "evidence") {
+      setEvidenceDocs((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      setMediaAttachments((prev) => prev.filter((_, i) => i !== index));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -111,6 +125,7 @@ export function MilestoneSubmissionFormView({
           : undefined,
 
       evidenceDocs: evidenceDocs,
+      mediaAttachments,
 
       status: formData.status,
 
@@ -286,7 +301,7 @@ export function MilestoneSubmissionFormView({
                 <input
                   type="file"
                   multiple
-                  onChange={handleFileUpload}
+                  onChange={(e) => handleFileUpload(e, "evidence")}
                   className="hidden"
                   id="file-upload"
                   accept=".pdf,.doc,.docx,.jpg,.png,.mp4"
@@ -325,7 +340,62 @@ export function MilestoneSubmissionFormView({
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeFile(index)}
+                        onClick={() => removeFile(index, "evidence")}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <Label>Milestone Media Attachments</Label>
+              <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:bg-muted/50 transition-colors cursor-pointer relative">
+                <input
+                  type="file"
+                  multiple
+                  onChange={(e) => handleFileUpload(e, "media")}
+                  className="hidden"
+                  id="media-upload"
+                  accept="image/*,video/*"
+                  disabled={isUploading}
+                />
+                <label htmlFor="media-upload" className={`cursor-pointer ${isUploading ? 'opacity-50' : ''}`}>
+                  {isUploading ? (
+                    <Loader2 className="h-8 w-8 mx-auto mb-2 text-muted-foreground animate-spin" />
+                  ) : (
+                    <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                  )}
+                  <p className="text-sm font-medium">
+                    {isUploading ? "Uploading..." : "Click to upload media"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Images and videos up to 50MB
+                  </p>
+                </label>
+              </div>
+
+              {mediaAttachments.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">
+                    Uploaded Media ({mediaAttachments.length}):
+                  </p>
+                  {mediaAttachments.map((media, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between bg-muted p-3 rounded-lg"
+                    >
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm truncate max-w-[300px]">{media.split('/').pop()}</span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFile(index, "media")}
                       >
                         <X className="h-4 w-4" />
                       </Button>

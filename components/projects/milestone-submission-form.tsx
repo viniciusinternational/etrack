@@ -40,6 +40,7 @@ export function MilestoneSubmissionForm({
       percentComplete: 0,
       notes: "",
       evidenceDocs: [],
+      mediaAttachments: [],
       status: "Pending" as any,
       createdAt: new Date(),
       updatedAt: new Date(),

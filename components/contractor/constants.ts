@@ -71,6 +71,7 @@ export const MOCK_SUBMISSIONS: MilestoneSubmission[] = [
     percentComplete: 75,
     notes: "Foundation work completed on schedule",
     evidenceDocs: ["foundation-photo-1.jpg", "foundation-photo-2.jpg"],
+    mediaAttachments: ["foundation-walkthrough.mp4"],
     status: SubmissionStatus.Approved,
     reviewedBy: "rev-1",
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -91,6 +92,7 @@ export const MOCK_SUBMISSIONS: MilestoneSubmission[] = [
     percentComplete: 45,
     notes: "Superstructure work in progress",
     evidenceDocs: ["structure-photo-1.jpg"],
+    mediaAttachments: ["structure-progress-1.jpg"],
     status: SubmissionStatus.Pending,
     createdAt: new Date("2024-10-22"),
     updatedAt: new Date("2024-10-22"),
@@ -107,6 +109,7 @@ export const MOCK_SUBMISSIONS: MilestoneSubmission[] = [
     percentComplete: 100,
     notes: "Site preparation completed",
     evidenceDocs: ["site-prep-1.jpg", "site-prep-2.jpg"],
+    mediaAttachments: ["site-prep-drone.mp4"],
     status: SubmissionStatus.Approved,
     reviewedBy: "rev-1",
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

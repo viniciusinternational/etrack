@@ -62,6 +62,9 @@ export function AddMilestoneModal({
   const [evidenceDocs, setEvidenceDocs] = useState<string[]>(
     milestone?.evidenceDocs || []
   );
+  const [mediaAttachments, setMediaAttachments] = useState<string[]>(
+    milestone?.mediaAttachments || []
+  );
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [useGpsLocation, setUseGpsLocation] = useState(false);
   const [formData, setFormData] = useState({
@@ -104,6 +107,7 @@ export function AddMilestoneModal({
         longitude: lon,
       });
       setEvidenceDocs(milestone.evidenceDocs || []);
+      setMediaAttachments(milestone.mediaAttachments || []);
       // In edit mode, NEVER auto-check GPS to prevent overwriting correct location
       // User must explicitly check to update location
       console.log(
@@ -121,11 +125,15 @@ export function AddMilestoneModal({
         longitude: "",
       });
       setEvidenceDocs([]);
+      setMediaAttachments([]);
       setUseGpsLocation(false);
     }
   }, [open, milestone?.id]);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    target: "evidence" | "media"
+  ) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
@@ -135,7 +143,11 @@ export function AddMilestoneModal({
       const urls = results
         .filter((res) => res !== undefined)
         .map((res) => res.url);
-      setEvidenceDocs((prev) => [...prev, ...urls]);
+      if (target === "evidence") {
+        setEvidenceDocs((prev) => [...prev, ...urls]);
+      } else {
+        setMediaAttachments((prev) => [...prev, ...urls]);
+      }
       toast.success("Files uploaded successfully");
     } catch (error) {
       console.error("Upload failed", error);
@@ -143,8 +155,12 @@ export function AddMilestoneModal({
     }
   };
 
-  const removeFile = (index: number) => {
-    setEvidenceDocs((prev) => prev.filter((_, i) => i !== index));
+  const removeFile = (index: number, target: "evidence" | "media") => {
+    if (target === "evidence") {
+      setEvidenceDocs((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      setMediaAttachments((prev) => prev.filter((_, i) => i !== index));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -176,6 +192,7 @@ export function AddMilestoneModal({
             : undefined,
 
         evidenceDocs: evidenceDocs,
+        mediaAttachments,
 
         status: SubmissionStatus.Pending, // Default to Pending, parent will override based on role
 
@@ -192,6 +209,7 @@ export function AddMilestoneModal({
         longitude: "",
       });
       setEvidenceDocs([]);
+      setMediaAttachments([]);
     } catch (error) {
       // Error handling is done in the parent component
       console.error("Failed to save milestone", error);
@@ -210,6 +228,7 @@ export function AddMilestoneModal({
         longitude: "",
       });
       setEvidenceDocs([]);
+      setMediaAttachments([]);
       setUseGpsLocation(false);
     }
   };
@@ -392,7 +411,7 @@ export function AddMilestoneModal({
                 multiple
                 className="hidden"
                 id="evidence-upload"
-                onChange={handleFileUpload}
+                onChange={(e) => handleFileUpload(e, "evidence")}
                 disabled={isUploading || isSubmitting}
               />
               <Button
@@ -423,7 +442,58 @@ export function AddMilestoneModal({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => removeFile(docIndex)}
+                      onClick={() => removeFile(docIndex, "evidence")}
+                      disabled={isSubmitting}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Milestone Media Attachments</Label>
+            <div className="border-2 border-dashed rounded-lg p-4">
+              <input
+                type="file"
+                multiple
+                accept="image/*,video/*"
+                className="hidden"
+                id="media-upload"
+                onChange={(e) => handleFileUpload(e, "media")}
+                disabled={isUploading || isSubmitting}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  document.getElementById("media-upload")?.click()
+                }
+                disabled={isUploading || isSubmitting}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                {isUploading ? "Uploading..." : "Upload Media"}
+              </Button>
+            </div>
+            {mediaAttachments.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {mediaAttachments.map((media, mediaIndex) => (
+                  <div
+                    key={mediaIndex}
+                    className="flex items-center justify-between text-sm bg-primary/10 border border-primary/20 p-2 rounded"
+                  >
+                    <span className="flex items-center gap-2 truncate">
+                      <FileText className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">{media}</span>
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFile(mediaIndex, "media")}
                       disabled={isSubmitting}
                     >
                       <X className="h-4 w-4" />

@@ -10,6 +10,7 @@ const updateSubmissionSchema = z.object({
   notes: z.string().optional(),
   geoTag: z.any().optional(),
   evidenceDocs: z.array(z.string()).optional(),
+  mediaAttachments: z.array(z.string()).optional(),
   status: z.nativeEnum(SubmissionStatus).optional(),
   reviewedBy: z.string().optional(),
 });

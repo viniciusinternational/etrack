@@ -27,6 +27,7 @@ const updateProjectSchema = z.object({
   endDate: z.string().optional(),
   status: z.nativeEnum(ProjectStatus).optional(),
   evidenceDocs: z.array(z.string()).optional(),
+  projectGallery: z.array(z.string()).optional(),
 });
 
 export async function GET(
@@ -50,6 +51,7 @@ export async function GET(
         endDate: true,
         status: true,
         evidenceDocs: true,
+        projectGallery: true,
         createdAt: true,
         updatedAt: true,
         supervisingMda: {
@@ -90,6 +92,7 @@ export async function GET(
             notes: true,
             status: true,
             evidenceDocs: true,
+            mediaAttachments: true,
             reviewedAt: true,
             reviewedBy: true,
             createdAt: true,

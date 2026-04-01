@@ -10,6 +10,8 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
+  ImageIcon,
+  Video,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +50,7 @@ function MilestoneCardContractor({
     ? milestone.evidenceDocs
     : milestone.evidenceDocs.slice(0, 2);
   const hasMoreDocs = milestone.evidenceDocs.length > 2;
+  const hasMedia = (milestone.mediaAttachments || []).length > 0;
 
   return (
     <Card>
@@ -131,6 +134,42 @@ function MilestoneCardContractor({
                       <span className="truncate">{doc}</span>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {hasMedia && (
+              <div className="mt-2">
+                <div className="text-xs font-medium text-gray-700 mb-1.5">
+                  Milestone Media ({milestone.mediaAttachments.length})
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {milestone.mediaAttachments.map((media, idx) => {
+                    const isVideo = /\.(mp4|mov|webm|ogg)$/i.test(media);
+                    return (
+                      <a
+                        key={idx}
+                        href={media}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="group border rounded-md overflow-hidden bg-gray-50"
+                      >
+                        {isVideo ? (
+                          <div className="h-24 flex items-center justify-center text-gray-600">
+                            <Video className="h-5 w-5 mr-1" />
+                            <span className="text-xs">Video</span>
+                          </div>
+                        ) : (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={media}
+                            alt="Milestone media"
+                            className="h-24 w-full object-cover"
+                          />
+                        )}
+                      </a>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -333,6 +372,43 @@ export function ContractProjectDetailView({
                       <span>{doc}</span>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {project.projectGallery.length > 0 && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" />
+                  Project Gallery ({project.projectGallery.length})
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {project.projectGallery.map((media, idx) => {
+                    const isVideo = /\.(mp4|mov|webm|ogg)$/i.test(media);
+                    return (
+                      <a
+                        key={idx}
+                        href={media}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="group border rounded-md overflow-hidden bg-gray-50"
+                      >
+                        {isVideo ? (
+                          <div className="h-24 flex items-center justify-center text-gray-600">
+                            <Video className="h-5 w-5 mr-1" />
+                            <span className="text-xs">Video</span>
+                          </div>
+                        ) : (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={media}
+                            alt="Project gallery media"
+                            className="h-24 w-full object-cover"
+                          />
+                        )}
+                      </a>
+                    );
+                  })}
                 </div>
               </div>
             )}

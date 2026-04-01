@@ -18,6 +18,7 @@ const createContractSchema = z.object({
   endDate: z.string().datetime(),
   status: z.nativeEnum(ProjectStatus).default(ProjectStatus.Planned),
   evidenceDocs: z.array(z.string()).optional(),
+  projectGallery: z.array(z.string()).optional(),
 });
 
 export async function GET(request: NextRequest) {

@@ -106,6 +106,7 @@ export interface Project {
   endDate: Date;
   status: ProjectStatus;
   evidenceDocs: string[];
+  projectGallery: string[];
   milestones?: MilestoneSubmission[];
   expenditures?: Expenditure[];
   createdAt: Date;
@@ -123,6 +124,7 @@ export type ProjectFormInput = {
   startDate: string; // string from input
   endDate: string; // string from input
   evidenceDocs: string[];
+  projectGallery: string[];
 };
 
 // =====================================================
@@ -160,6 +162,7 @@ export interface MilestoneSubmission {
   notes?: string;
   geoTag?: GeoLocation;
   evidenceDocs: string[];
+  mediaAttachments: string[];
   status: SubmissionStatus;
   reviewedBy?: string;
   reviewer?: User;
@@ -178,6 +181,7 @@ export type MilestoneSubmissionFormInput = {
 
   geoTag?: GeoLocation;
   evidenceDocs: string[];
+  mediaAttachments: string[];
 
   status: SubmissionStatus;
 
